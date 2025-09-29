@@ -24,6 +24,21 @@ export class ElasticClient implements IElasticClient {
         return new ElasticClient(cl)
     }
 
+    private normalizeIndex(index: string): string {
+        if (index.includes('jenkins')) {
+            const parts = index.split('.');
+            const jenkinsIndex = parts.findIndex(part => part.includes('jenkins'));
+
+            if (jenkinsIndex !== -1 && parts[jenkinsIndex + 1]) {
+                return `logs.jenkins.${parts[jenkinsIndex + 1]}`;
+            }
+            return 'logs.jenkins.default';
+        }
+
+        return 'logs.unknown.default';
+    }
+
+
     // Obtener los logs mas importantes , errores y warnings
     //TODO: Cambiar el @timestep  solo logs recientes
     async getLogsJenkins(): Promise<ResponseToRabbitJenkins[]> {
@@ -74,7 +89,7 @@ export class ElasticClient implements IElasticClient {
 
             const data = response.hits as Hits
             const responseToRabbit: ResponseToRabbitJenkins[] = data.hits.map(hit => ({
-                _index: hit._index,
+                _index: this.normalizeIndex(hit._index),
                 "@timestamp": hit._source["@timestamp"],
                 level: hit._source.log ? hit._source.log.level : "N/A",
                 message: hit._source.message ? hit._source.message : "N/A"
