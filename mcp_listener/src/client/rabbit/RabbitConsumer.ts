@@ -38,6 +38,7 @@ export class RabbitConsumer {
                     const content = msg?.content.toString()
                     const json = JSON.parse(content)
                     console.log(json)
+                    handleLogMCP(json)
                 } catch (error) {
                     console.error('Erro procesando mensaje')
                 }
@@ -72,6 +73,7 @@ export class RabbitConsumer {
                     const content = msg?.content.toString()
                     const json = JSON.parse(content)
                     console.log(json)
+                    handleLogMCP(json)
                 } catch (error) {
                     console.error('Erro procesando mensaje')
                 }
