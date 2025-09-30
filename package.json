@@ -44,7 +44,6 @@
     "@elastic/elasticsearch": "^8.19.1",
     "@modelcontextprotocol/sdk": "1.17.4",
     "amqplib": "^0.10.9",
-    "axios": "^1.12.2",
     "es8": "npm:@elastic/elasticsearch@^8.19.1",
     "jszip": "3.10.1"
   }
