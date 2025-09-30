@@ -1,29 +1,33 @@
 import { Router } from 'express'
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { MCPServer } from '../server/MCPServer'
 
 export function createMCPRouter(mcpServer: MCPServer) {
     const router = Router();
+    const logsService = mcpServer.getLogService()
 
-    router.post('/mcp', async (req, res) => {
+    router.post('/logs/:target', async (req, res) => {
         try {
-            const server = mcpServer.getServer()
+            const { target } = req.params;
+            const logs = Array.isArray(req.body) ? req.body : [req.body];
 
-            const trasnport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
-                sessionIdGenerator: undefined,
-            })
-            res.on('close', () => {
-                console.log('Request Closed')
-                trasnport.close()
-                server.close()
-            })
+            let count: number;
 
-            //Pasar el json obtenido
+            if (target === 'jenkins') {
+                count = await logsService.insertLogsJenkins(logs);
+            } else if (target === 'api') {
+                count = await logsService.insertLogsAPI(logs);
+            } else {
+                return res.status(400).json({
+                    error: `Target no soportado: ${target}`
+                });
+            }
 
-            await server.connect(trasnport)
-            await trasnport.handleRequest(req, res, req.body)
-        } catch (error) {
-            console.log('Error handling MCP request:', error)
+            return res.status(200).json({
+                success: true,
+                message: `${count} logs guardados`,
+                target
+            });
+        } catch (err) {
             if (!res.hasHeader) {
                 res.status(500).json({
                     jsonrpc: '2.0',
@@ -36,6 +40,7 @@ export function createMCPRouter(mcpServer: MCPServer) {
             }
         }
     });
+
 
     router.get('/mcp', async (req, res) => {
         console.log('Received GET MCP request')
