@@ -30,9 +30,15 @@ export class ElasticClient implements IElasticClient {
             const jenkinsIndex = parts.findIndex(part => part.includes('jenkins'));
 
             if (jenkinsIndex !== -1 && parts[jenkinsIndex + 1]) {
-                return `logs.jenkins.${parts[jenkinsIndex + 1]}`;
+                return `logs.jenkins`;
             }
             return 'logs.jenkins.default';
+        }
+        if (index.includes('api')) {
+            const parts = index.split('.')
+            const apiIndex = parts.findIndex(part => part.includes('api'))
+            if (apiIndex !== -1) return `logs.api.${parts[apiIndex]}`
+            return 'logs.api.default'
         }
 
         return 'logs.unknown.default';
@@ -160,6 +166,7 @@ export class ElasticClient implements IElasticClient {
             const data = response.hits as Hits
 
             const responseToRabbit: ResponseToRabbitAPI[] = data.hits.map(hit => ({
+                _index: this.normalizeIndex(hit._index),
                 "@timestamp": hit._source["@timestamp"],
                 message: hit._source.message ? hit._source.message : "N/A",
                 http_method: hit._source.http.request.method,
