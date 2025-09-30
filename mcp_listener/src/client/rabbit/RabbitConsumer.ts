@@ -1,4 +1,4 @@
-import { handleLogMCP } from '../../handlers/log_handler'
+import { handleLogJenkinsMCP, handleLogAPIMCP } from '../../handlers/log_handler'
 import { RabbitConnection } from './RabbitConnection'
 import * as amqp from 'amqplib'
 
@@ -40,7 +40,7 @@ export class RabbitConsumer {
             const content = msg?.content.toString()
             const json = JSON.parse(content)
             console.log(json)
-            handleLogMCP(json)
+            handleLogJenkinsMCP(json)
           } catch (error) {
             console.error('Erro procesando mensaje')
           }
@@ -79,7 +79,7 @@ export class RabbitConsumer {
             const content = msg?.content.toString()
             const json = JSON.parse(content)
             console.log(json)
-            handleLogMCP(json)
+            handleLogAPIMCP(json)
           } catch (error) {
             console.error('Erro procesando mensaje')
           }
