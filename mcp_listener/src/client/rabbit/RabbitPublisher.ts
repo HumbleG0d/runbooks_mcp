@@ -1,3 +1,4 @@
+import { ResponseToRabbitAPI, ResponseToRabbitJenkins } from '../../types/types';
 import { ElasticClient } from '../elastic/ElasticClient';
 import { RabbitConnection } from './RabbitConnection';
 
@@ -26,6 +27,29 @@ export class RabbitPublisher {
             })
 
             const list_msg = await this.elasticClient.getLogsJenkins()
+            const channel = this.rabbitConnection.getChannel()
+            console.log(list_msg)
+            for (const msg of list_msg) {
+                channel.publish(this.exchange, msg._index, Buffer.from(JSON.stringify(msg)), {
+                    persistent: true
+                })
+            }
+        } catch (error) {
+            console.error('Error publicando logs en RabbitMQ', error)
+            throw error
+        }
+    }
+
+
+    async publishLogsAPI(): Promise<void> {
+        try {
+            this.elasticClient = await ElasticClient.start()
+
+            this.rabbitConnection.assertExchange(this.exchange, 'topic', {
+                durable: true
+            })
+
+            const list_msg = await this.elasticClient.getLogsApi()
             const channel = this.rabbitConnection.getChannel()
             console.log(list_msg)
             for (const msg of list_msg) {
