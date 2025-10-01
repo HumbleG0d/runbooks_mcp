@@ -1,0 +1,28 @@
+server.name: kibana
+server.host: "0.0.0.0"
+server.port: 5601
+
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+elasticsearch.serviceAccountToken: "AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS10b2tlbjpxRDM0OHE2VVFuQ1dJdDkyRENLWFVR"
+
+# Monitoring
+monitoring.ui.container.elasticsearch.enabled: true
+
+# Seguridad
+xpack.security.enabled: true
+xpack.security.encryptionKey: "z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4"
+
+xpack.encryptedSavedObjects.encryptionKey: "fhjskloppd678ehkdfdlliverpoolfcr32chars"
+
+# Reporting
+xpack.reporting.encryptionKey: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+
+# Fleet
+xpack.fleet.enabled: true
+
+# Telemetry
+telemetry.optIn: false
+telemetry.enabled: false
+
+# Logging
+logging.root.level: info
