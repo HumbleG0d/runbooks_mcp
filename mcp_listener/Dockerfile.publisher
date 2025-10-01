@@ -10,4 +10,4 @@ COPY dist ./dist
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 USER nodejs
 
-CMD ["node", "dist/publisher-scheduler.js"]
+CMD ["node", "src/publisher.js"]
