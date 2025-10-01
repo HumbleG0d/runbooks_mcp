@@ -13,4 +13,4 @@ USER nodejs
 HEALTHCHECK --interval=30s --timeout=3s \
     CMD node -e "process.exit(0)" || exit 1
 
-CMD ["node", "dist/consumer.js"]
+CMD ["node", "src/consumer.js"]
