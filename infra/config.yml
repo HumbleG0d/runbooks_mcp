@@ -1,0 +1,143 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  
+  # Receiver para logs de Jenkins via HTTP
+  filelog:
+    include: [/var/jenkins_home/logs/*.log, /var/jenkins_home/*.log]
+    operators:
+      - type: regex_parser
+        regex: '^(?P<log_message>.*)'
+        parse_from: body
+        parse_to: attributes # Probar cambiar a body
+
+processors:
+  # Procesador para agregar metadatos de Jenkins 
+  attributes/jenkins:
+    actions:
+      - key: service.name
+        value: jenkins
+        action: insert
+      - key: service.version
+        value: "2.400"
+        action: insert
+      - key: deployment.environment
+        value: production
+        action: insert
+      - key: log_source
+        value: jenkins
+        action: insert
+
+  # Procesador para identificar datos de Express API
+  attributes/express:
+    actions:
+      - key: log_source
+        value: express-api
+        action: insert
+      - key: deployment.environment
+        value: production
+        action: insert
+
+  # FILTRO: Solo Jenkins logs 
+  filter/jenkins_only:
+    logs:
+      log_record:
+        - 'attributes["log_source"] == "jenkins"'
+
+  # FILTRO: Solo Express API 
+  filter/express_only:
+    traces:
+      span:
+        - 'resource.attributes["service.name"] == "express-metrics-api"'
+    metrics:
+      metric:
+        - 'resource.attributes["service.name"] == "express-metrics-api"'
+    logs:
+      log_record:
+        - 'resource.attributes["service.name"] == "express-metrics-api"'
+
+  # Procesador de memoria para optimizar rendimiento
+  memory_limiter:
+    limit_mib: 512
+    spike_limit_mib: 128
+    check_interval: 5s
+  
+  # Procesador de lotes
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+
+  # Procesador de recursos
+  resource:
+    attributes:
+      - key: cluster
+        value: local-dev
+        action: upsert
+
+exporters:
+  # Exportador a APM Server 
+  otlphttp/apm:
+    endpoint: http://apm-server:8200
+    tls:
+      insecure: true
+
+  # Exportador directo a Elasticsearch 
+  elasticsearch/jenkins:
+    endpoints: [http://elasticsearch:9200]
+    logs_index: jenkins-logs-%{+yyyy.MM.dd}
+    mapping:
+      mode: ecs
+    auth:
+      authenticator: basicauth/elasticsearch
+
+  # Exportador de debugging
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+extensions:
+  basicauth/elasticsearch:
+    client_auth:
+      username: elastic
+      password: somethingsecret
+
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  pipelines:
+    # Pipeline 1: JENKINS LOGS → Elasticsearch directo
+    logs/jenkins:
+      receivers: [filelog]
+      processors: [memory_limiter, attributes/jenkins, filter/jenkins_only, batch]
+      exporters: [elasticsearch/jenkins, debug]
+    
+    # Pipeline 2: EXPRESS METRICS → APM Server
+    metrics/express:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/apm, debug]
+    
+    # Pipeline 3: EXPRESS TRACES → APM Server
+    traces/express:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlphttp/apm, debug]
+
+    # Pipeline 4: EXPRESS LOGS → APM Server 
+    logs/express:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlphttp/apm, debug]
+  
+  extensions: [basicauth/elasticsearch, health_check]
+  
+  telemetry:
+    logs:
+      level: info
