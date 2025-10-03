@@ -1,5 +1,5 @@
-import { RabbitConsumer } from '../src/client/rabbit/RabbitConsumer'
-const URL = 'amqp://localhost:5672'
+import { RabbitConsumer } from './client/rabbit/RabbitConsumer'
+const URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672'
 
 async function runConsumer() {
   console.log('Iniciando Consumer Service...\n')
