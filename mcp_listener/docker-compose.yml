@@ -1,0 +1,33 @@
+services:
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile.consumer
+    container_name: consumer
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      MCP_URL: http://host.docker.internal:3222
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - otel-network
+
+  publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile.publisher
+    container_name: publisher
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      SCHEDULE_INTERVAL_MINUTES: "5"
+    restart: unless-stopped
+    networks:
+      - otel-network
+
+networks:
+  otel-network:
+    external: true
