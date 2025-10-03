@@ -1,5 +1,5 @@
 import { RabbitPublisher } from './client/rabbit/RabbitPublisher'
-const URL = 'amqp://localhost:5672'
+const URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672'
 
 async function runPublisher() {
   console.log('Iniciando Publisher Service...\n')
