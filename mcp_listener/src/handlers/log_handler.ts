@@ -7,7 +7,8 @@ export async function handleLogJenkinsMCP(
     // Asegurar que siempre sea un array
     const logsArray = Array.isArray(logs) ? logs : [logs];
 
-    const response = await fetch('http://localhost:4000/logs/jenkins', {
+    const mcpUrl = process.env.MCP_URL || 'http://localhost:3222';
+    const response = await fetch(`${mcpUrl}/mcp/logs/jenkins`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -22,12 +23,13 @@ export async function handleLogJenkinsMCP(
       );
     }
 
-    const result = await response.json();
+    const result = await response.json() as { count?: number };
     console.log(`${result.count || logsArray.length} logs de Jenkins enviados al MCP`);
 
   } catch (error) {
     console.error('Error al enviar logs de Jenkins al MCP:', error);
-    throw error; //  Re-lanza el error para que RabbitMQ lo maneje
+    // No re-lanzamos el error para evitar que crashee el consumer
+    console.log('Continuando con el procesamiento de mensajes...');
   }
 }
 
@@ -39,7 +41,8 @@ export async function handleLogAPIMCP(
     // Asegurar que siempre sea un array
     const logsArray = Array.isArray(logs) ? logs : [logs];
 
-    const response = await fetch('http://localhost:4000/logs/api', {
+    const mcpUrl = process.env.MCP_URL || 'http://localhost:3222';
+    const response = await fetch(`${mcpUrl}/mcp/logs/api`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -54,11 +57,12 @@ export async function handleLogAPIMCP(
       );
     }
 
-    const result = await response.json();
+    const result = await response.json() as { count?: number };
     console.log(`${result.count || logsArray.length} logs de API enviados al MCP`);
 
   } catch (error) {
     console.error('Error al enviar logs de API al MCP:', error);
-    throw error; // Re-lanza el error para que RabbitMQ lo maneje
+    // No re-lanzamos el error para evitar que crashee el consumer
+    console.log('Continuando con el procesamiento de mensajes...');
   }
 }
