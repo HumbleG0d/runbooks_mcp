@@ -2,12 +2,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Copiamos package.json y package-lock.json
 COPY package*.json ./
-RUN npm ci --only=production
 
-COPY dist ./dist
+# Instalamos dependencias
+RUN npm ci
+
+# Copiamos config y código fuente
+COPY tsconfig*.json ./
+COPY src ./src
+
+# Compilamos TS → genera dist/
+RUN npm run build   
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 USER nodejs
 
-CMD ["node", "src/publisher.js"]
+CMD ["node", "dist/publisher.js"]
