@@ -42,13 +42,5 @@
     "ts-node": "10.9.2",
     "typescript": "5.9.2"
   },
-  "dependencies": {
-    "@elastic/elasticsearch": "^8.19.1",
-    "@modelcontextprotocol/sdk": "1.17.4",
-    "amqplib": "^0.10.9",
-    "es8": "npm:@elastic/elasticsearch@^8.19.1",
-    "express": "^5.1.0",
-    "jszip": "3.10.1",
-    "pg": "^8.16.3"
-  }
+  "dependencies": {}
 }
