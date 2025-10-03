@@ -28,16 +28,14 @@ export function createMCPRouter(mcpServer: MCPServer) {
         target,
       })
     } catch (err) {
-      if (!res.hasHeader) {
-        res.status(500).json({
-          jsonrpc: '2.0',
-          error: {
-            code: -32603,
-            message: 'Internal server error',
-          },
-          id: null,
-        })
-      }
+      return res.status(500).json({
+        jsonrpc: '2.0',
+        error: {
+          code: -32603,
+          message: 'Internal server error',
+        },
+        id: null,
+      })
     }
   })
 
