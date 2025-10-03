@@ -8,7 +8,7 @@ import { ToolResponse } from '../types/types'
 export class MCPServer implements IMCPServers {
   private server!: McpServer
   private app: express.Application
-  private readonly PORT: number = 4000
+  private readonly PORT: number = 3222
   private logService: LogsService
 
   constructor() {
@@ -118,7 +118,7 @@ export class MCPServer implements IMCPServers {
       //Configuramos las rutas
       this.setupRoutes()
 
-      this.app.listen(this.PORT)
+      // Eliminada llamada duplicada a this.app.listen(this.PORT)
 
       await new Promise<void>((resolve, reject) => {
         this.app
