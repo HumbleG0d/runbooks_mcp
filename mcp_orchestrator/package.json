@@ -1,11 +1,16 @@
 {
     "name": "mcp_orchestrator",
     "version": "1.0.0",
-    "main": "dist/index.js",
+    "main": "dist/server.js",
     "scripts": {
         "build": "tsc",
-        "start": "node dist/index.js",
-        "dev": "ts-node src/index.ts",
+        "start": "node dist/server.js",
+        "start:http": "node dist/hybrid-server.js http",
+        "start:mcp": "node dist/warp-mcp.js",
+        "start:hybrid": "node dist/hybrid-server.js hybrid",
+        "dev": "ts-node src/server.ts",
+        "dev:mcp": "ts-node src/warp-mcp.ts",
+        "dev:hybrid": "ts-node src/hybrid-server.ts hybrid",
         "dev:watch": "nodemon --exec ts-node src/index.ts",
         "clean": "rimraf dist"
     },
