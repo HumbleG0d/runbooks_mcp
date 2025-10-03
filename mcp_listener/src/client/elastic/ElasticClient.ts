@@ -17,7 +17,7 @@ export class ElasticClient implements IElasticClient {
 
   static async start(): Promise<ElasticClient> {
     const cl = new Client8({
-      node: 'http://localhost:9200',
+      node: process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
       auth: {
         username: 'elastic',
         password: 'somethingsecret',
