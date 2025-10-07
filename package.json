@@ -1,27 +1,46 @@
 {
-    "name": "mcp_orchestrator",
-    "version": "1.0.0",
-    "main": "dist/server.js",
-    "scripts": {
-        "build": "tsc",
-        "start": "node dist/hybrid-server.js hybrid",
-        "start:hybrid": "node dist/hybrid-server.js hybrid",
-        "dev": "ts-node src/hybrid-server.ts hybrid",
-        "dev:hybrid": "ts-node src/hybrid-server.ts hybrid",
-        "clean": "rimraf dist"
-    },
-    "dependencies": {
-        "express": "^5.1.0",
-        "pg": "^8.16.3",
-        "@modelcontextprotocol/sdk": "1.17.4"
-    },
-    "devDependencies": {
-        "@types/express": "^5.0.3",
-        "@types/node": "24.3.0",
-        "@types/pg": "^8.15.5",
-        "nodemon": "3.1.10",
-        "rimraf": "6.0.1",
-        "ts-node": "10.9.2",
-        "typescript": "5.9.2"
-    }
+  "name": "runbooks_mcp_devops",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "dev:watch": "nodemon --exec ts-node src/index.ts",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "test": "jest",
+    "format": "prettier --write \"{src,test}/**/*.{ts,tsx,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"{src,test}/**/*.{ts,tsx,js,json,md,yml,yaml}\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HumbleG0d/runbooks_mcp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HumbleG0d/runbooks_mcp/issues"
+  },
+  "homepage": "https://github.com/HumbleG0d/runbooks_mcp#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.7",
+    "@types/express": "^5.0.3",
+    "@types/jest": "30.0.0",
+    "@types/node": "24.3.0",
+    "@types/pg": "^8.15.5",
+    "jest": "30.1.3",
+    "nodemon": "3.1.10",
+    "prettier": "3.6.2",
+    "rimraf": "6.0.1",
+    "ts-jest": "29.4.1",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.2"
+  },
+  "dependencies": {}
 }
