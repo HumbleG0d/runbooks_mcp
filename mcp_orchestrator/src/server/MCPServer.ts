@@ -1,139 +1,100 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { IMCPServers } from './IMCPServer'
-import express from 'express'
-import { createMCPRouter } from '../api/MCPApi'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ErrorCode,
+  McpError
+} from '@modelcontextprotocol/sdk/types.js'
 import { LogsService } from '../db/LogService'
-import { ToolResponse } from '../types/types'
+import { MCPHandlers } from '../handlers/MCPHandlers'
+import { ServerConfig } from '../types/server'
 
-export class MCPServer implements IMCPServers {
-  private server!: McpServer
-  private app: express.Application
-  private readonly PORT: number = 3222
-  private logService: LogsService
+export class MCPServer {
+  private server: Server
+  private handlers: MCPHandlers
 
-  constructor() {
-    this.app = express()
-    this.app.use(express.json())
-    this.logService = new LogsService()
-    this.initializeServer()
+  constructor(
+    private logService: LogsService,
+    private config: ServerConfig
+  ) {
+    this.server = new Server(
+      {
+        name: config.name,
+        version: config.version,
+      },
+      {
+        capabilities: {
+          tools: {},
+        },
+      }
+    )
+
+    this.handlers = new MCPHandlers(logService)
+    this.setupHandlers()
+    this.setupErrorHandling()
   }
 
-  private initializeServer(): void {
-    this.server = new McpServer({
-      name: 'mcp-mtt',
-      version: '1.0.0',
+  private setupHandlers(): void {
+    this.server.setRequestHandler(ListToolsRequestSchema, async (_request, _extra) => {
+      return {
+        tools: this.handlers.getAvailableTools()
+      } as any
+    })
+
+    this.server.setRequestHandler(CallToolRequestSchema, async (request, _extra) => {
+      try {
+        const toolName = request.params.name
+        const args = request.params.arguments || {}
+
+        switch (toolName) {
+          case 'read_jenkins_logs':
+            return await this.handlers.handleJenkinsLogs(args) as any
+          case 'read_api_logs':
+            return await this.handlers.handleApiLogs(args) as any
+          default:
+            throw new McpError(
+              ErrorCode.MethodNotFound,
+              `Tool desconocido: ${toolName}`
+            )
+        }
+      } catch (error) {
+        console.error(`[MCP] Error ejecutando tool ${request.params.name}:`, error)
+        
+        if (error instanceof McpError) {
+          throw error
+        }
+        
+        throw new McpError(
+          ErrorCode.InternalError,
+          `Error ejecutando tool: ${error instanceof Error ? error.message : String(error)}`
+        )
+      }
     })
   }
 
-  getServer(): McpServer {
-    return this.server
-  }
-
-  getLogService(): LogsService {
-    return this.logService
-  }
-
-  registerTools = (): void => {
-    this.server.registerTool(
-      'read_jenkins_logs',
-      {
-        title: 'read logs jenkis',
-        description: 'Leer todos los logs de jenkins',
-        inputSchema: {},
-      },
-      async () => await this.handleShowLogsJenkis()
-    )
-
-    this.server.registerTool(
-      'read_api_metric',
-      {
-        title: 'read metrics api',
-        description: 'Leer todas las metricas de la api',
-        inputSchema: {},
-      },
-      async () => await this.handleShowLogsAPI()
-    )
-  }
-
-  async handleShowLogsJenkis(): Promise<ToolResponse> {
-    try {
-      const data = await this.logService.getLogsJenkins()
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Repositories found: ${JSON.stringify(data, null, 2)}`,
-          },
-        ],
-      }
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-          },
-        ],
-      }
+  private setupErrorHandling(): void {
+    this.server.onerror = (error) => {
+      console.error('[MCP Server Error]', error)
     }
   }
 
-  async handleShowLogsAPI(): Promise<ToolResponse> {
+  public async start(): Promise<void> {
     try {
-      const data = await this.logService.getLogsAPI()
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Repositories found: ${JSON.stringify(data, null, 2)}`,
-          },
-        ],
-      }
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-          },
-        ],
-      }
-    }
-  }
-
-  private setupRoutes(): void {
-    const mcpRouter = createMCPRouter(this)
-    this.app.use('/mcp', mcpRouter)
-  }
-
-  async setupServer(): Promise<void> {
-    try {
-      //Inciamos el servidor
-
+      console.log('Iniciando servidor MCP...')
       await this.logService.initialize()
+      console.log('Base de datos inicializada correctamente')
 
-      //Registramos las herramientas
-      this.registerTools()
-
-      //Configuramos las rutas
-      this.setupRoutes()
-
-      // Eliminada llamada duplicada a this.app.listen(this.PORT)
-
-      await new Promise<void>((resolve, reject) => {
-        this.app
-          .listen(this.PORT, () => {
-            console.log(`Servidor MCP listo en puerto ${this.PORT}`)
-            resolve()
-          })
-          .on('error', (error) => {
-            console.error('Error al iniciar servidor:', error)
-            reject(error)
-          })
-      })
+      const transport = new StdioServerTransport()
+      await this.server.connect(transport)
+      console.log('Servidor MCP conectado exitosamente')
     } catch (error) {
-      console.error('Error en setupServer:', error)
+      console.error('Error inicializando servidor MCP:', error)
       throw error
     }
+  }
+
+  public async close(): Promise<void> {
+    await this.server.close()
   }
 }
