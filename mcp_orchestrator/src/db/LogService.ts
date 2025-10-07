@@ -1,17 +1,20 @@
 import { ResponseToRabbitAPI, ResponseToRabbitJenkins } from '../types/types'
 import { Pool } from 'pg'
+import { Config } from '../config/Config'
 
 export class LogsService {
   private pool: Pool
+  private config: Config
 
   constructor() {
+    this.config = Config.getInstance()
     this.pool = new Pool({
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      database: process.env.DB_NAME || 'mcp_logs',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      max: 20,
+      host: this.config.databaseConfig.host,
+      port: this.config.databaseConfig.port,
+      database: this.config.databaseConfig.database,
+      user: this.config.databaseConfig.user,
+      password: this.config.databaseConfig.password,
+      max: this.config.databaseConfig.maxConnections,
     })
   }
 
