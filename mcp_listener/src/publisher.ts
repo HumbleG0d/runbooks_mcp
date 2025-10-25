@@ -7,9 +7,13 @@ async function runPublisher() {
   const publisher = await RabbitPublisher.create(URL)
 
   try {
-    console.log('Publicando logs...')
+    console.log('Publicando logs de API...')
     await publisher.publishLogsAPI()
-    console.log('Logs publicados')
+    console.log('Logs de API publicados')
+
+    console.log('Publicando logs de Jenkins...')
+    await publisher.publishLogs()
+    console.log('Logs de Jenkins publicados')
   } catch (error) {
     console.error('Error en publisher:', error)
     await publisher.close()

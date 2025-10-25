@@ -39,7 +39,6 @@ export class RabbitConsumer {
           try {
             const content = msg?.content.toString()
             const json = JSON.parse(content)
-            console.log(json)
             handleLogJenkinsMCP(json)
           } catch (error) {
             console.error('Erro procesando mensaje')
@@ -78,7 +77,6 @@ export class RabbitConsumer {
           try {
             const content = msg?.content.toString()
             const json = JSON.parse(content)
-            console.log(json)
             handleLogAPIMCP(json)
           } catch (error) {
             console.error('Erro procesando mensaje')
