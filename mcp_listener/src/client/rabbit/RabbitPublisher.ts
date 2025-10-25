@@ -27,7 +27,6 @@ export class RabbitPublisher {
 
       const list_msg = await this.elasticClient.getLogsJenkins()
       const channel = this.rabbitConnection.getChannel()
-      console.log(list_msg)
       for (const msg of list_msg) {
         channel.publish(
           this.exchange,
@@ -69,6 +68,12 @@ export class RabbitPublisher {
       console.error('Error publicando logs en RabbitMQ', error)
       throw error
     }
+  }
+
+  async publishAll(): Promise<void> {
+    // Publica ambos tipos de logs de forma secuencial
+    await this.publishLogsAPI()
+    await this.publishLogs()
   }
 
   async close(): Promise<void> {

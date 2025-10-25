@@ -7,7 +7,11 @@ async function runConsumer() {
   const consumer = await RabbitConsumer.create(URL)
 
   try {
-    await consumer.consumeLogsAPI()
+    // Consumir API y Jenkins en paralelo
+    await Promise.all([
+      consumer.consumeLogsAPI(),
+      consumer.consumeLogs()
+    ])
 
     console.log('Consumer Service iniciado')
     console.log('Esperando mensajes...')
