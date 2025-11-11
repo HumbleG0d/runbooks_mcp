@@ -53,7 +53,7 @@ class MCP {
           },
           {
             name: 'read_api_logs',
-            description: 'Leer los logs de API más recientes',  
+            description: 'Leer los logs de API más recientes',
             inputSchema: {
               type: 'object',
               properties: {
@@ -99,19 +99,19 @@ class MCP {
     try {
       const limit = args?.limit || 20
       const logs = await this.logService.getLogsJenkins(limit)
-      
+
       if (logs.length === 0) {
         return {
           content: [
             {
               type: 'text',
-              text: '📭 No se encontraron logs de Jenkins'
+              text: 'No se encontraron logs de Jenkins'
             }
           ]
         }
       }
 
-      const formattedLogs = logs.map((log: any) => 
+      const formattedLogs = logs.map((log: any) =>
         `🔸 **${log.level || 'INFO'}** [${new Date(log['@timestamp']).toLocaleString()}]\n   📝 ${log.message}`
       ).join('\n\n')
 
@@ -119,7 +119,7 @@ class MCP {
         content: [
           {
             type: 'text',
-            text: `# 🔧 Logs de Jenkins (${logs.length} registros)\n\n${formattedLogs}`
+            text: `# Logs de Jenkins (${logs.length} registros)\n\n${formattedLogs}`
           }
         ]
       }
@@ -128,7 +128,7 @@ class MCP {
         content: [
           {
             type: 'text',
-            text: `❌ Error obteniendo logs de Jenkins: ${error instanceof Error ? error.message : 'Error desconocido'}`
+            text: `Error obteniendo logs de Jenkins: ${error instanceof Error ? error.message : 'Error desconocido'}`
           }
         ]
       }
@@ -139,19 +139,19 @@ class MCP {
     try {
       const limit = args?.limit || 20
       const logs = await this.logService.getLogsAPI(limit)
-      
+
       if (logs.length === 0) {
         return {
           content: [
             {
               type: 'text',
-              text: '📭 No se encontraron logs de API'
+              text: 'No se encontraron logs de API'
             }
           ]
         }
       }
 
-      const formattedLogs = logs.map((log: any) => 
+      const formattedLogs = logs.map((log: any) =>
         `🔸 **${log.http_method} ${log.http_status}** [${new Date(log['@timestamp']).toLocaleString()}]\n   📝 ${log.message}`
       ).join('\n\n')
 
@@ -159,7 +159,7 @@ class MCP {
         content: [
           {
             type: 'text',
-            text: `# 🌐 Logs de API (${logs.length} registros)\n\n${formattedLogs}`
+            text: `# Logs de API (${logs.length} registros)\n\n${formattedLogs}`
           }
         ]
       }
@@ -168,7 +168,7 @@ class MCP {
         content: [
           {
             type: 'text',
-            text: `❌ Error obteniendo logs de API: ${error instanceof Error ? error.message : 'Error desconocido'}`
+            text: `Error obteniendo logs de API: ${error instanceof Error ? error.message : 'Error desconocido'}`
           }
         ]
       }
@@ -190,13 +190,13 @@ class MCP {
   async run() {
     try {
       await this.logService.initialize()
-      console.error('✅ Base de datos inicializada correctamente')
+      console.error('Base de datos inicializada correctamente')
 
       const transport = new StdioServerTransport()
       await this.server.connect(transport)
-      console.error('🚀 Servidor MCP para Warp conectado exitosamente')
+      console.error('Servidor MCP para Warp conectado exitosamente')
     } catch (error) {
-      console.error('❌ Error inicializando servidor MCP:', error)
+      console.error('Error inicializando servidor MCP:', error)
       process.exit(1)
     }
   }
@@ -208,6 +208,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('💥 Error fatal:', error)
+  console.error('Error fatal:', error)
   process.exit(1)
 })
