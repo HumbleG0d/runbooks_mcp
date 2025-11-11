@@ -7,17 +7,21 @@ async function runPublisher() {
   const publisher = await RabbitPublisher.create(URL)
 
   try {
-    console.log('Publicando logs de API...')
-    await publisher.publishLogsAPI()
-    console.log('Logs de API publicados')
-
     console.log('Publicando logs de Jenkins...')
     await publisher.publishLogs()
     console.log('Logs de Jenkins publicados')
+
+    // IMPORTANTE: Esperar un poco antes de cerrar para asegurar que los mensajes se envíen
+    console.log('Esperando confirmación de mensajes...')
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
   } catch (error) {
     console.error('Error en publisher:', error)
+  } finally {
     await publisher.close()
-    process.exit(1)
+    console.log('Publisher cerrado correctamente')
+    process.exit(0)
   }
 }
+
 runPublisher()
