@@ -1,9 +1,9 @@
-import { LogsService } from '../db/LogService'
+import { LogsService } from '../db/LogsService'
 import { ResponseToRabbitAPI, ResponseToRabbitJenkins } from '../types/types'
 import { MCPTool, MCPToolResponse, LogFilter } from '../types/server'
 
 export class MCPHandlers {
-  constructor(private logService: LogsService) {}
+  constructor(private logService: LogsService) { }
 
   public getAvailableTools(): MCPTool[] {
     return [
@@ -68,7 +68,7 @@ export class MCPHandlers {
       const level = args?.level
 
       let logs: ResponseToRabbitJenkins[]
-      
+
       if (level) {
         logs = await this.logService.getLogsJenkinsByLevel(level, limit)
       } else {
@@ -89,12 +89,12 @@ export class MCPHandlers {
       const formattedLogs = logs.map((log: ResponseToRabbitJenkins) => {
         const timestamp = new Date(log['@timestamp']).toLocaleString()
         const level = log.level || 'INFO'
-        
+
         return ` ** ${level}** [${timestamp}]\n ${log.message}`
       }).join('\n\n')
 
       const filterText = level ? ` (filtrado por nivel: ${level})` : ''
-      
+
       return {
         content: [
           {
@@ -122,7 +122,7 @@ export class MCPHandlers {
       const status = args?.status
 
       let logs: ResponseToRabbitAPI[]
-      
+
       if (status) {
         // Filtrar por status si se proporciona
         const allLogs = await this.logService.getLogsAPI(limit * 2) // Obtener más para filtrar
@@ -144,12 +144,12 @@ export class MCPHandlers {
 
       const formattedLogs = logs.map((log: ResponseToRabbitAPI) => {
         const timestamp = new Date(log['@timestamp']).toLocaleString()
-        
+
         return `**${log.http_method} ${log.http_status}** [${timestamp}]\n ${log.message}`
       }).join('\n\n')
 
       const filterText = status ? ` (filtrado por status: ${status})` : ''
-      
+
       return {
         content: [
           {

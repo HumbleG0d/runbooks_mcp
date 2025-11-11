@@ -8,7 +8,7 @@ import {
   ErrorCode,
   McpError
 } from '@modelcontextprotocol/sdk/types.js'
-import { LogsService } from './db/LogService.js'
+import { LogsService } from './db/LogsService.js'
 
 class MCP {
   private server: Server
@@ -53,7 +53,7 @@ class MCP {
           },
           {
             name: 'read_api_logs',
-            description: 'Leer los logs de API más recientes',  
+            description: 'Leer los logs de API más recientes',
             inputSchema: {
               type: 'object',
               properties: {
@@ -99,7 +99,7 @@ class MCP {
     try {
       const limit = args?.limit || 20
       const logs = await this.logService.getLogsJenkins(limit)
-      
+
       if (logs.length === 0) {
         return {
           content: [
@@ -111,7 +111,7 @@ class MCP {
         }
       }
 
-      const formattedLogs = logs.map((log: any) => 
+      const formattedLogs = logs.map((log: any) =>
         `🔸 **${log.level || 'INFO'}** [${new Date(log['@timestamp']).toLocaleString()}]\n   📝 ${log.message}`
       ).join('\n\n')
 
@@ -139,7 +139,7 @@ class MCP {
     try {
       const limit = args?.limit || 20
       const logs = await this.logService.getLogsAPI(limit)
-      
+
       if (logs.length === 0) {
         return {
           content: [
@@ -151,7 +151,7 @@ class MCP {
         }
       }
 
-      const formattedLogs = logs.map((log: any) => 
+      const formattedLogs = logs.map((log: any) =>
         `🔸 **${log.http_method} ${log.http_status}** [${new Date(log['@timestamp']).toLocaleString()}]\n   📝 ${log.message}`
       ).join('\n\n')
 

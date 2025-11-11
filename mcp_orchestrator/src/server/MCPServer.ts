@@ -6,7 +6,7 @@ import {
   ErrorCode,
   McpError
 } from '@modelcontextprotocol/sdk/types.js'
-import { LogsService } from '../db/LogService'
+import { LogsService } from '../db/LogsService'
 import { MCPHandlers } from '../handlers/MCPHandlers'
 import { ServerConfig } from '../types/server'
 
@@ -60,11 +60,11 @@ export class MCPServer {
         }
       } catch (error) {
         console.error(`[MCP] Error ejecutando tool ${request.params.name}:`, error)
-        
+
         if (error instanceof McpError) {
           throw error
         }
-        
+
         throw new McpError(
           ErrorCode.InternalError,
           `Error ejecutando tool: ${error instanceof Error ? error.message : String(error)}`
