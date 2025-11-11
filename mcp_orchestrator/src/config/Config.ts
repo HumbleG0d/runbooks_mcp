@@ -1,15 +1,19 @@
+// config/Config.ts - ACTUALIZADO
 import { ServerConfig, DatabaseConfig } from '../types/server'
+import { OutboxConfig } from '../types/outbox'
 
 export class Config {
   private static instance: Config
   private _serverConfig: ServerConfig
   private _databaseConfig: DatabaseConfig
+  private _outboxConfig: OutboxConfig
 
 
 
   private constructor() {
     this._serverConfig = this.loadServerConfig()
     this._databaseConfig = this.loadDatabaseConfig()
+    this._outboxConfig = this.loadOutboxConfig()
   }
 
   public static getInstance(): Config {
@@ -45,6 +49,16 @@ export class Config {
     }
   }
 
+  private loadOutboxConfig(): OutboxConfig {
+    return {
+      processingInterval: parseInt(process.env.OUTBOX_PROCESSING_INTERVAL || '5000'), // 5 segundos
+      batchSize: parseInt(process.env.OUTBOX_BATCH_SIZE || '50'),
+      maxRetries: parseInt(process.env.OUTBOX_MAX_RETRIES || '3'),
+      retryBackoffMs: parseInt(process.env.OUTBOX_RETRY_BACKOFF_MS || '1000'), // 1 segundo base
+      lockTimeout: parseInt(process.env.OUTBOX_LOCK_TIMEOUT || '300') // 5 minutos
+    }
+  }
+
   public get serverConfig(): ServerConfig {
     return this._serverConfig
   }
@@ -53,11 +67,19 @@ export class Config {
     return this._databaseConfig
   }
 
+  public get outboxConfig(): OutboxConfig {
+    return this._outboxConfig
+  }
+
   public updateServerConfig(updates: Partial<ServerConfig>): void {
     this._serverConfig = { ...this._serverConfig, ...updates }
   }
 
   public updateDatabaseConfig(updates: Partial<DatabaseConfig>): void {
     this._databaseConfig = { ...this._databaseConfig, ...updates }
+  }
+
+  public updateOutboxConfig(updates: Partial<OutboxConfig>): void {
+    this._outboxConfig = { ...this._outboxConfig, ...updates }
   }
 }

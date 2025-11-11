@@ -8,7 +8,7 @@ import {
   ErrorCode,
   McpError
 } from '@modelcontextprotocol/sdk/types.js'
-import { LogsService } from './db/LogService.js'
+import { LogsService } from './db/LogsService.js'
 
 class MCP {
   private server: Server

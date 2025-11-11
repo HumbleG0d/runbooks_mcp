@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { LogsService } from '../db/LogService'
+import { LogsService } from '../db/LogsService'
 import { ResponseToRabbitAPI, ResponseToRabbitJenkins } from '../types/types'
 
 export class HTTPHandlers {
@@ -8,13 +8,13 @@ export class HTTPHandlers {
     private serverName: string,
     private serverVersion: string,
     private httpPort: number
-  ) {}
+  ) { }
 
   public async handleJenkinsLogs(req: Request, res: Response): Promise<void> {
     try {
       const logs = Array.isArray(req.body) ? req.body : [req.body]
       const count = await this.logService.insertLogsJenkins(logs as ResponseToRabbitJenkins[])
-      
+
       res.status(200).json({
         success: true,
         message: `${count} logs de Jenkins guardados`,
@@ -34,7 +34,7 @@ export class HTTPHandlers {
     try {
       const logs = Array.isArray(req.body) ? req.body : [req.body]
       const count = await this.logService.insertLogsAPI(logs as ResponseToRabbitAPI[])
-      
+
       res.status(200).json({
         success: true,
         message: `${count} logs de API guardados`,
@@ -88,7 +88,7 @@ export class HTTPHandlers {
     res.json({
       name: this.serverName,
       version: this.serverVersion,
-      description: 'Servidor Híbrido MCP para gestión de logs',
+      description: 'Servidor MCP para gestión de logs',
       endpoints: {
         jenkins_logs: 'POST /mcp/logs/jenkins',
         api_logs: 'POST /mcp/logs/api'
