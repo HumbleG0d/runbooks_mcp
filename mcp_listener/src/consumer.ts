@@ -7,24 +7,26 @@ async function runConsumer() {
   const consumer = await RabbitConsumer.create(URL)
 
   try {
-    // Consumir API y Jenkins en paralelo
-    await Promise.all([
-      consumer.consumeLogsAPI(),
-      consumer.consumeLogs()
-    ])
+    // IMPORTANTE: Agregar await para asegurar que el consumer se inicie correctamente
+    await consumer.consumeLogs()
+    console.log('Consumer Service iniciado correctamente')
+    console.log('Esperando mensajes...\n')
 
-    console.log('Consumer Service iniciado')
-    console.log('Esperando mensajes...')
-
+    // Mantener el proceso vivo
     process.on('SIGINT', async () => {
       console.log('\nDeteniendo consumer...')
       await consumer.close()
       process.exit(0)
     })
+
+    // Prevenir que el proceso termine
+    await new Promise(() => { })
+
   } catch (error) {
     console.error('Error en consumer:', error)
     await consumer.close()
     process.exit(1)
   }
 }
+
 runConsumer()

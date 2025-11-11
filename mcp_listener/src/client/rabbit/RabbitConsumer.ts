@@ -1,7 +1,6 @@
-import { handleLogJenkinsMCP, handleLogAPIMCP } from '../../handlers/log_handler'
-import { RabbitConnection } from './RabbitConnection'
 import * as amqp from 'amqplib'
-
+import { RabbitConnection } from './RabbitConnection'
+import { handleLogJenkinsMCP } from '../../handlers/log_handler'
 export class RabbitConsumer {
   private rabbitConnection: RabbitConnection
   private exchange: string = 'logs'
@@ -17,77 +16,60 @@ export class RabbitConsumer {
 
   async consumeLogs(): Promise<void> {
     try {
-      this.rabbitConnection.assertExchange(this.exchange, 'topic', {
+      console.log(`Configurando exchange: ${this.exchange}`)
+
+      await this.rabbitConnection.assertExchange(this.exchange, 'topic', {
         durable: true,
       })
+
+      console.log('Exchange configurado')
 
       const q = await this.rabbitConnection.assertQueue('', {
         exclusive: true,
       })
 
+      console.log(`Cola creada: ${q.queue}`)
+
       const channel = this.rabbitConnection.getChannel()
 
-      await channel.bindQueue(q.queue, this.exchange, 'logs.jenkins.*')
+      const routingKey = 'logs.jenkins.*'
+      await channel.bindQueue(q.queue, this.exchange, routingKey)
+
+      console.log(`Cola vinculada al exchange con routing key: ${routingKey}`)
 
       await channel.consume(
         q.queue,
         (msg: amqp.ConsumeMessage | null) => {
           if (msg === null) {
-            console.log('MENSAJE NULO')
+            console.log('MENSAJE NULO recibido')
             return
           }
+
           try {
-            const content = msg?.content.toString()
+            console.log(`Mensaje recibido - Routing Key: ${msg.fields.routingKey}`)
+            const content = msg.content.toString()
+            console.log(`Contenido: ${content.substring(0, 100)}...`)
+
             const json = JSON.parse(content)
+            console.log('JSON parseado correctamente')
+            console.log(json)
+
             handleLogJenkinsMCP(json)
           } catch (error) {
-            console.error('Erro procesando mensaje')
+            console.error('Error procesando mensaje:', error)
+            console.error('Contenido del mensaje:', msg.content.toString())
           }
         },
         {
           noAck: true,
         }
       )
+
+      console.log('Consumer configurado y escuchando mensajes')
+
     } catch (error) {
-      console.error('Erro consumiendo logs de RabbitMQ', error)
-    }
-  }
-
-  async consumeLogsAPI(): Promise<void> {
-    try {
-      this.rabbitConnection.assertExchange(this.exchange, 'topic', {
-        durable: true,
-      })
-
-      const q = await this.rabbitConnection.assertQueue('', {
-        exclusive: true,
-      })
-
-      const channel = this.rabbitConnection.getChannel()
-
-      await channel.bindQueue(q.queue, this.exchange, 'logs.api.*')
-
-      await channel.consume(
-        q.queue,
-        (msg: amqp.ConsumeMessage | null) => {
-          if (msg === null) {
-            console.log('MENSAJE NULO')
-            return
-          }
-          try {
-            const content = msg?.content.toString()
-            const json = JSON.parse(content)
-            handleLogAPIMCP(json)
-          } catch (error) {
-            console.error('Erro procesando mensaje')
-          }
-        },
-        {
-          noAck: true,
-        }
-      )
-    } catch (error) {
-      console.error('Erro consumiendo logs de RabbitMQ', error)
+      console.error('Error consumiendo logs de RabbitMQ:', error)
+      throw error
     }
   }
 
