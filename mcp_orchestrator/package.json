@@ -5,7 +5,7 @@
     "scripts": {
         "build": "tsc",
         "start": "node dist/hybrid-server.js hybrid",
-        "start:hybrid": "node dist/hybrid-server.js hybrid",
+        "start:outbox": "ts-node src/main.ts",
         "dev": "ts-node src/hybrid-server.ts hybrid",
         "dev:hybrid": "ts-node src/hybrid-server.ts hybrid",
         "clean": "rimraf dist"

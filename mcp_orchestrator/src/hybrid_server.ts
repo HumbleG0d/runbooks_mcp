@@ -1,5 +1,5 @@
 
-import { LogsService } from './db/LogService'
+import { LogsService } from './db/LogsService'
 import { Config } from './config/Config'
 import { HTTPServer } from './server/HTTPServer'
 import { MCPServer } from './server/MCPServer'
@@ -34,15 +34,15 @@ export class HybridMCPServerRefactored {
     }
   }
 
- //Cierra todos los servidores de forma segura
+  //Cierra todos los servidores de forma segura
   public async close(): Promise<void> {
     console.log('Cerrando servidores...')
-    
+
     try {
       if (this.mcpServer) {
         await this.mcpServer.close()
       }
-      
+
       await this.logService.close()
       console.log('Servidores cerrados correctamente')
     } catch (error) {
@@ -85,7 +85,7 @@ async function main(): Promise<void> {
 
     // Ejecutando el servidor hibrido
     await server.runHybrid()
-   
+
   } catch (error) {
     console.error('Error fatal:', error)
     process.exit(1)
