@@ -6,7 +6,7 @@ import {
   ErrorCode,
   McpError
 } from '@modelcontextprotocol/sdk/types.js'
-import { LogsService } from '../db/LogService'
+import { LogsService } from '../db/LogsService'
 import { MCPHandlers } from '../handlers/MCPHandlers'
 import { ServerConfig } from '../types/server'
 
