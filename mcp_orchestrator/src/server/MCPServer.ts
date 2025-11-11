@@ -60,11 +60,11 @@ export class MCPServer {
         }
       } catch (error) {
         console.error(`[MCP] Error ejecutando tool ${request.params.name}:`, error)
-        
+
         if (error instanceof McpError) {
           throw error
         }
-        
+
         throw new McpError(
           ErrorCode.InternalError,
           `Error ejecutando tool: ${error instanceof Error ? error.message : String(error)}`
@@ -81,15 +81,14 @@ export class MCPServer {
 
   public async start(): Promise<void> {
     try {
-      console.log('Iniciando servidor MCP...')
-      await this.logService.initialize()
-      console.log('Base de datos inicializada correctamente')
+      console.error('[MCP] Conectando servidor MCP...')
 
       const transport = new StdioServerTransport()
       await this.server.connect(transport)
-      console.log('Servidor MCP conectado exitosamente')
+
+      console.error('[MCP] Servidor MCP conectado exitosamente')
     } catch (error) {
-      console.error('Error inicializando servidor MCP:', error)
+      console.error('[MCP] Error inicializando servidor MCP:', error)
       throw error
     }
   }

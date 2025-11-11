@@ -18,7 +18,7 @@ export class HTTPServer {
       config.version,
       config.httpPort
     )
-    
+
     this.setupMiddleware()
     this.setupRoutes()
   }
@@ -26,7 +26,7 @@ export class HTTPServer {
   private setupMiddleware(): void {
     this.app.use(express.json({ limit: '10mb' }))
     this.app.use(express.urlencoded({ extended: true }))
-    
+
     // Middleware de logging
     this.app.use((req, res, next) => {
       console.log(`[HTTP] ${req.method} ${req.path} - ${new Date().toISOString()}`)
@@ -54,25 +54,23 @@ export class HTTPServer {
 
   public async start(): Promise<void> {
     try {
-      console.log('Iniciando servidor HTTP...')
-      await this.logService.initialize()
-      console.log('Base de datos inicializada correctamente')
+      console.error('[HTTP] Iniciando servidor HTTP...')
+      // ELIMINAR: await this.logService.initialize() // Ya se inicializa en hybrid_server
 
       await new Promise<void>((resolve, reject) => {
         this.app
           .listen(this.config.httpPort, () => {
-            console.log(`Servidor HTTP listo en puerto ${this.config.httpPort}`)
-            console.log('Endpoints disponibles:')
+            console.error(`[HTTP] Servidor HTTP listo en puerto ${this.config.httpPort}`)
             resolve()
           })
           .on('error', (error) => {
-            console.error('Error al iniciar servidor HTTP:', error)
+            console.error('[HTTP] Error al iniciar servidor HTTP:', error)
             reject(error)
           })
       })
     } catch (error) {
-      console.error('Error inicializando servidor HTTP:', error)
-      throw error
+      console.error('[HTTP] Error inicializando servidor HTTP:', error)
+      // NO lanzar la excepción - permitir que el proceso continúe sin HTTP
     }
   }
 }

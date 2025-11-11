@@ -47,7 +47,7 @@ export class LogsService {
                 );
             `)
 
-      console.log('Base de datos inicializada correctamente')
+      console.error('Base de datos inicializada correctamente')
     } catch (error) {
       console.error('Error inicializando base de datos:', error)
       throw error
@@ -58,7 +58,7 @@ export class LogsService {
 
   async insertLogsJenkins(logs: ResponseToRabbitJenkins[]): Promise<number> {
     if (logs.length === 0) {
-      console.log('No hay logs de Jenkins para insertar')
+      console.error('No hay logs de Jenkins para insertar')
       return 0
     }
 
@@ -87,7 +87,7 @@ export class LogsService {
       const result = await client.query(query, params)
       await client.query('COMMIT')
 
-      console.log(`${result.rowCount} logs de Jenkins insertados`)
+      console.error(`${result.rowCount} logs de Jenkins insertados`)
       return result.rowCount || 0
     } catch (error) {
       await client.query('ROLLBACK')
@@ -100,7 +100,7 @@ export class LogsService {
 
   async insertLogsAPI(logs: ResponseToRabbitAPI[]): Promise<number> {
     if (logs.length === 0) {
-      console.log('No hay logs de API para insertar')
+      console.error('No hay logs de API para insertar')
       return 0
     }
 
@@ -134,7 +134,7 @@ export class LogsService {
       const result = await client.query(query, params)
       await client.query('COMMIT')
 
-      console.log(`${result.rowCount} logs de API insertados`)
+      console.error(`${result.rowCount} logs de API insertados`)
       return result.rowCount || 0
     } catch (error) {
       await client.query('ROLLBACK')
@@ -217,6 +217,6 @@ export class LogsService {
 
   async close(): Promise<void> {
     await this.pool.end()
-    console.log('Conexión a BD cerrada')
+    console.error('Conexión a BD cerrada')
   }
 }

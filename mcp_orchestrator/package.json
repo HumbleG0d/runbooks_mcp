@@ -4,10 +4,11 @@
     "main": "dist/server.js",
     "scripts": {
         "build": "tsc",
-        "start": "node dist/hybrid-server.js hybrid",
-        "start:hybrid": "node dist/hybrid-server.js hybrid",
-        "dev": "ts-node src/hybrid-server.ts hybrid",
-        "dev:hybrid": "ts-node src/hybrid-server.ts hybrid",
+        "start": "node dist/hybrid_server.js hybrid",
+        "start:mcp": "ts-node src/hybrid_server.ts",
+        "start:http": "ts-node src/startHTTPServer.ts",
+        "dev": "ts-node src/hybrid_server.ts hybrid",
+        "dev:hybrid": "ts-node src/hybrid_server.ts hybrid",
         "clean": "rimraf dist"
     },
     "dependencies": {

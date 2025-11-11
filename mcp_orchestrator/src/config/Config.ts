@@ -5,6 +5,8 @@ export class Config {
   private _serverConfig: ServerConfig
   private _databaseConfig: DatabaseConfig
 
+
+
   private constructor() {
     this._serverConfig = this.loadServerConfig()
     this._databaseConfig = this.loadDatabaseConfig()
@@ -26,9 +28,15 @@ export class Config {
     }
   }
 
+
+
   private loadDatabaseConfig(): DatabaseConfig {
+    // Si está en Windows y corre localmente, usa localhost
+    // Si corre en Docker, usa el nombre del servicio
+    const dbHost = process.env.DB_HOST || process.env.NODE_ENV === 'docker' ? 'postgres' : 'localhost'
+
     return {
-      host: process.env.DB_HOST || 'localhost',
+      host: dbHost,
       port: parseInt(process.env.DB_PORT || '5432'),
       database: process.env.DB_NAME || 'mcp_logs',
       user: process.env.DB_USER || 'postgres',
