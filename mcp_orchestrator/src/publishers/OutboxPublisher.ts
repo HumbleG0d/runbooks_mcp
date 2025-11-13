@@ -21,7 +21,7 @@ export class RabbitMQPublisher implements EventPublisher {
     private readonly exchangeName = 'logs.events'
 
     constructor(private rabbitUrl: string) {
-        rabbitUrl = "amqp://localhost:5672"
+        this.rabbitUrl = "amqp://localhost:5672"
     }
 
     async connect(): Promise<void> {
@@ -32,7 +32,7 @@ export class RabbitMQPublisher implements EventPublisher {
             this.channel = await this.connection.createChannel()
             await this.channel.assertExchange(this.exchangeName, 'topic', { durable: true })
 
-            console.log('RabbitMQ Publisher conectado')
+            console.error('RabbitMQ Publisher conectado')
         } catch (error) {
             console.error('Error conectando RabbitMQ Publisher:', error)
             throw error
@@ -59,7 +59,7 @@ export class RabbitMQPublisher implements EventPublisher {
             )
 
             // Por ahora solo logueamos
-            console.log(`Evento publicado: ${event.event_type} [${event.id}]`, {
+            console.error(`Evento publicado: ${event.event_type} [${event.id}]`, {
                 routingKey,
                 aggregateId: event.aggregate_id
             })
@@ -67,7 +67,7 @@ export class RabbitMQPublisher implements EventPublisher {
             // Simula delay de red
             await new Promise(resolve => setTimeout(resolve, 10))
         } catch (error) {
-            console.error(` Error publicando evento ${event.id}:`, error)
+            console.error(`Error publicando evento ${event.id}:`, error)
             throw error
         }
     }
@@ -76,7 +76,7 @@ export class RabbitMQPublisher implements EventPublisher {
         try {
             await this.channel?.close()
             await this.connection?.close()
-            console.log('RabbitMQ Publisher desconectado')
+            console.error('RabbitMQ Publisher desconectado')
         } catch (error) {
             console.error('Error desconectando RabbitMQ Publisher:', error)
         }
@@ -86,7 +86,8 @@ export class RabbitMQPublisher implements EventPublisher {
         const routes: Record<OutboxEventType, string> = {
             [OutboxEventType.JENKINS_LOG_CREATED]: 'logs.jenkins.created',
             [OutboxEventType.API_LOG_CREATED]: 'logs.api.created',
-            [OutboxEventType.LOGS_BATCH_PROCESSED]: 'logs.batch.processed'
+            [OutboxEventType.LOGS_BATCH_PROCESSED]: 'logs.batch.processed',
+            [OutboxEventType.INCIDENT_DETECTED]: 'incidents.detected.critical'  // NUEVO
         }
         return routes[eventType] || 'logs.unknown'
     }
@@ -97,11 +98,11 @@ export class RabbitMQPublisher implements EventPublisher {
  */
 export class ConsolePublisher implements EventPublisher {
     async connect(): Promise<void> {
-        console.log('Console Publisher conectado')
+        console.error('Console Publisher conectado')
     }
 
     async publish(event: OutboxEvent): Promise<void> {
-        console.log('[CONSOLE PUBLISHER] Evento:', {
+        console.error('[CONSOLE PUBLISHER] Evento:', {
             id: event.id,
             type: event.event_type,
             aggregateId: event.aggregate_id,
@@ -110,6 +111,6 @@ export class ConsolePublisher implements EventPublisher {
     }
 
     async disconnect(): Promise<void> {
-        console.log('Console Publisher desconectado')
+        console.error('Console Publisher desconectado')
     }
 }
