@@ -35,9 +35,12 @@ export class Config {
 
 
   private loadDatabaseConfig(): DatabaseConfig {
-    // Si está en Windows y corre localmente, usa localhost
-    // Si corre en Docker, usa el nombre del servicio
-    const dbHost = process.env.DB_HOST || process.env.NODE_ENV === 'docker' ? 'postgres' : 'localhost'
+    let dbHost = 'localhost'
+    if (process.env.DB_HOST) {
+      dbHost = process.env.DB_HOST
+    } else if (process.env.NODE_ENV === 'docker') {
+      dbHost = 'postgres'
+    }
 
     return {
       host: dbHost,

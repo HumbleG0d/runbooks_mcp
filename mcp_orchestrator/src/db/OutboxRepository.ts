@@ -36,9 +36,9 @@ export class OutboxRepository {
           ON outbox_events(aggregate_id, event_type);
       `)
 
-            console.log('✅ Tabla outbox_events inicializada')
+            console.error('Tabla outbox_events inicializada')
         } catch (error) {
-            console.error('❌ Error inicializando outbox_events:', error)
+            console.error('Error inicializando outbox_events:', error)
             throw error
         } finally {
             client.release()

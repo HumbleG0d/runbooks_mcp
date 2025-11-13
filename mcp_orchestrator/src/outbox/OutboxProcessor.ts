@@ -23,7 +23,7 @@ export class OutboxProcessor {
             return
         }
 
-        console.log('Iniciando OutboxProcessor...')
+        console.error('Iniciando OutboxProcessor...')
 
         try {
             await this.publisher.connect()
@@ -44,7 +44,7 @@ export class OutboxProcessor {
             // Procesa inmediatamente al iniciar
             await this.processEvents()
 
-            console.log('OutboxProcessor iniciado correctamente')
+            console.error('OutboxProcessor iniciado correctamente')
         } catch (error) {
             console.error('Error iniciando OutboxProcessor:', error)
             this.isRunning = false
@@ -56,7 +56,7 @@ export class OutboxProcessor {
      * Detiene el procesamiento
      */
     async stop(): Promise<void> {
-        console.log('🛑 Deteniendo OutboxProcessor...')
+        console.error('Deteniendo OutboxProcessor...')
 
         this.isRunning = false
 
@@ -72,7 +72,7 @@ export class OutboxProcessor {
 
         await this.publisher.disconnect()
 
-        console.log('✅ OutboxProcessor detenido')
+        console.error('OutboxProcessor detenido')
     }
 
     /**
@@ -91,7 +91,7 @@ export class OutboxProcessor {
                 return
             }
 
-            console.log(`📦 Procesando ${events.length} eventos pendientes...`)
+            console.error(`Procesando ${events.length} eventos pendientes...`)
 
             const results = await Promise.allSettled(
                 events.map(event => this.processEvent(event))
@@ -100,14 +100,14 @@ export class OutboxProcessor {
             const succeeded = results.filter(r => r.status === 'fulfilled').length
             const failed = results.filter(r => r.status === 'rejected').length
 
-            console.log(`✅ Procesados: ${succeeded} exitosos, ${failed} fallidos`)
+            console.error(`Procesados: ${succeeded} exitosos, ${failed} fallidos`)
 
             // Mostrar estadísticas cada 10 ciclos
             if (Math.random() < 0.1) {
                 await this.logStats()
             }
         } catch (error) {
-            console.error('❌ Error en ciclo de procesamiento:', error)
+            console.error('Error en ciclo de procesamiento:', error)
         }
     }
 
@@ -122,11 +122,11 @@ export class OutboxProcessor {
             // Marca como completado
             await this.repository.markAsCompleted(event.id)
 
-            console.log(`✅ Evento ${event.id} procesado exitosamente`)
+            console.error(`Evento ${event.id} procesado exitosamente`)
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
 
-            console.error(`❌ Error procesando evento ${event.id}:`, errorMessage)
+            console.error(`Error procesando evento ${event.id}:`, errorMessage)
 
             // Marca como fallido y programa retry
             await this.repository.markAsFailed(
@@ -146,10 +146,10 @@ export class OutboxProcessor {
         try {
             const deleted = await this.repository.cleanupOldEvents(7)
             if (deleted > 0) {
-                console.log(`🧹 Limpieza: ${deleted} eventos antiguos eliminados`)
+                console.error(`Limpieza: ${deleted} eventos antiguos eliminados`)
             }
         } catch (error) {
-            console.error('❌ Error en limpieza de eventos:', error)
+            console.error('Error en limpieza de eventos:', error)
         }
     }
 
@@ -159,7 +159,7 @@ export class OutboxProcessor {
     private async logStats(): Promise<void> {
         try {
             const stats = await this.repository.getStats()
-            console.log('📊 Estadísticas Outbox (últimas 24h):', {
+            console.error('Estadísticas Outbox (ultimas 24h):', {
                 pending: stats.pending,
                 processing: stats.processing,
                 completed: stats.completed,
@@ -170,7 +170,7 @@ export class OutboxProcessor {
                     : 'N/A'
             })
         } catch (error) {
-            console.error('❌ Error obteniendo estadísticas:', error)
+            console.error('Error obteniendo estadísticas:', error)
         }
     }
 

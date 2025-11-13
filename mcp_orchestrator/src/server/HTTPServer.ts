@@ -1,10 +1,12 @@
 import express from 'express'
+import { Server } from 'http'
 import { LogsService } from '../db/LogsService'
 import { HTTPHandlers } from '../handlers/HTTPHandlers'
 import { ServerConfig } from '../types/server'
 
 export class HTTPServer {
   private app: express.Application
+  private server?: Server
   private handlers: HTTPHandlers
 
   constructor(
@@ -29,7 +31,7 @@ export class HTTPServer {
 
     // Middleware de logging
     this.app.use((req, res, next) => {
-      console.log(`[HTTP] ${req.method} ${req.path} - ${new Date().toISOString()}`)
+      console.error(`[HTTP] ${req.method} ${req.path} - ${new Date().toISOString()}`)
       next()
     })
 
@@ -90,36 +92,58 @@ export class HTTPServer {
   public async start(): Promise<void> {
     try {
       console.error('[HTTP] Iniciando servidor HTTP...')
-      // ELIMINAR: await this.logService.initialize() // Ya se inicializa en hybrid_server
-      console.log('Iniciando servidor HTTP...')
       await this.logService.initialize()
-      console.log('Base de datos inicializada correctamente')
+      console.error('[HTTP] Base de datos inicializada correctamente')
 
       await new Promise<void>((resolve, reject) => {
-        this.app
+        this.server = this.app
           .listen(this.config.httpPort, () => {
             console.error(`[HTTP] Servidor HTTP listo en puerto ${this.config.httpPort}`)
+            console.error('[HTTP] Endpoints disponibles:')
+            console.error('[HTTP]   GET  /')
+            console.error('[HTTP]   GET  /health')
+            console.error('[HTTP]   GET  /info')
+            console.error('[HTTP]   POST /mcp/logs/jenkins')
+            console.error('[HTTP]   POST /mcp/logs/api')
             resolve()
           })
-          .on('error', (error) => {
-            console.error('[HTTP] Error al iniciar servidor HTTP:', error)
-            console.log(`Servidor HTTP listo en puerto ${this.config.httpPort}`)
-            console.log('Endpoints disponibles:')
-            console.log('   GET  /')
-            console.log('   GET  /health')
-            console.log('   GET  /info')
-            console.log('   GET  /outbox/stats')
-            console.log('   POST /mcp/logs/jenkins')
-            console.log('   POST /mcp/logs/api')
-            resolve()
-          })
-          .on('error', (error) => {
-            console.error('Error al iniciar servidor HTTP:', error)
+          .on('error', (error: any) => {
+            if (error.code === 'EADDRINUSE') {
+              console.error(`[HTTP] Puerto ${this.config.httpPort} ya está en uso`)
+            } else {
+              console.error('[HTTP] Error al iniciar servidor HTTP:', error)
+            }
             reject(error)
           })
       })
     } catch (error) {
-      console.error('Error inicializando servidor HTTP:', error)
+      console.error('[HTTP] Error inicializando servidor HTTP:', error)
+      throw error
     }
+  }
+
+  public async close(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      if (!this.server) {
+        resolve()
+        return
+      }
+
+      this.server.close((err) => {
+        if (err) {
+          console.error('[HTTP] Error cerrando servidor HTTP:', err)
+          reject(err)
+        } else {
+          console.error('[HTTP] Servidor HTTP cerrado')
+          resolve()
+        }
+      })
+
+      // Forzar cierre después de 5 segundos
+      setTimeout(() => {
+        console.error('[HTTP] Forzando cierre de servidor HTTP')
+        resolve()
+      }, 5000)
+    })
   }
 }

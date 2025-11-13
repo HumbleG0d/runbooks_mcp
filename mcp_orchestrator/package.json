@@ -1,13 +1,16 @@
 {
     "name": "mcp_orchestrator",
     "version": "1.0.0",
-    "main": "dist/server.js",
+    "description": "MCP Server para leer runbooks y logs desde Claude Desktop",
+    "main": "dist/mcp-server.js",
     "scripts": {
         "build": "tsc",
-        "start": "node dist/hybrid-server.js hybrid",
+        "start:mcp": "node dist/mcp-server.js",
+        "start:hybrid": "node dist/hybrid-mcp-http.js",
         "start:outbox": "ts-node src/main.ts",
-        "dev": "ts-node src/hybrid-server.ts hybrid",
-        "dev:hybrid": "ts-node src/hybrid-server.ts hybrid",
+        "dev:mcp": "tsx src/mcp-server.ts",
+        "dev:hybrid": "tsx src/hybrid-mcp-http.ts",
+        "dev:outbox": "ts-node src/main.ts",
         "clean": "rimraf dist"
     },
     "dependencies": {
