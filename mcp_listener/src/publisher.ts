@@ -7,9 +7,15 @@ async function runPublisher() {
   const publisher = await RabbitPublisher.create(URL)
 
   try {
+    // Publicar logs de Jenkins
     console.log('Publicando logs de Jenkins...')
     await publisher.publishLogs()
-    console.log('Logs de Jenkins publicados')
+    console.log('Logs de Jenkins publicados\n')
+
+    // Publicar logs de API
+    console.log('Publicando logs de API...')
+    await publisher.publishLogsAPI()
+    console.log('Logs de API publicados\n')
 
     // IMPORTANTE: Esperar un poco antes de cerrar para asegurar que los mensajes se envíen
     console.log('Esperando confirmación de mensajes...')

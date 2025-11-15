@@ -7,10 +7,9 @@ async function runConsumer() {
   const consumer = await RabbitConsumer.create(URL)
 
   try {
-    // IMPORTANTE: Agregar await para asegurar que el consumer se inicie correctamente
     await consumer.consumeLogs()
     console.log('Consumer Service iniciado correctamente')
-    console.log('Esperando mensajes...\n')
+    console.log('Escuchando mensajes de Jenkins y API...\n')
 
     // Mantener el proceso vivo
     process.on('SIGINT', async () => {

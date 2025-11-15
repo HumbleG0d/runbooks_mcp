@@ -1,6 +1,7 @@
 import * as amqp from 'amqplib'
 import { RabbitConnection } from './RabbitConnection'
-import { handleLogJenkinsMCP } from '../../handlers/log_handler'
+import { handleLogJenkinsMCP, handleLogAPIMCP } from '../../handlers/log_handler'
+
 export class RabbitConsumer {
   private rabbitConnection: RabbitConnection
   private exchange: string = 'logs'
@@ -16,7 +17,7 @@ export class RabbitConsumer {
 
   async consumeLogs(): Promise<void> {
     try {
-      console.log(`Configurando exchange: ${this.exchange}`)
+      console.log(`🔌 Configurando exchange: ${this.exchange}`)
 
       await this.rabbitConnection.assertExchange(this.exchange, 'topic', {
         durable: true,
@@ -32,29 +33,41 @@ export class RabbitConsumer {
 
       const channel = this.rabbitConnection.getChannel()
 
-      const routingKey = 'logs.jenkins.*'
-      await channel.bindQueue(q.queue, this.exchange, routingKey)
+      const jenkinsRoutingKey = 'logs.jenkins.*'
+      await channel.bindQueue(q.queue, this.exchange, jenkinsRoutingKey)
+      console.log(`Cola vinculada a: ${jenkinsRoutingKey}`)
 
-      console.log(`Cola vinculada al exchange con routing key: ${routingKey}`)
+      const apiRoutingKey = 'logs.api.*'
+      await channel.bindQueue(q.queue, this.exchange, apiRoutingKey)
+      console.log(`Cola vinculada a: ${apiRoutingKey}`)
 
       await channel.consume(
         q.queue,
         (msg: amqp.ConsumeMessage | null) => {
           if (msg === null) {
-            console.log('MENSAJE NULO recibido')
+            console.log(' MENSAJE NULO recibido')
             return
           }
 
           try {
-            console.log(`Mensaje recibido - Routing Key: ${msg.fields.routingKey}`)
+            const routingKey = msg.fields.routingKey
+            console.log(`\nMensaje recibido - Routing Key: ${routingKey}`)
+
             const content = msg.content.toString()
             console.log(`Contenido: ${content.substring(0, 100)}...`)
 
             const json = JSON.parse(content)
             console.log('JSON parseado correctamente')
-            console.log(json)
 
-            handleLogJenkinsMCP(json)
+            if (routingKey.startsWith('logs.jenkins')) {
+              console.log('Despachando a handleLogJenkinsMCP...')
+              handleLogJenkinsMCP(json)
+            } else if (routingKey.startsWith('logs.api')) {
+              console.log('Despachando a handleLogAPIMCP...')
+              handleLogAPIMCP(json)
+            } else {
+              console.warn(`Routing key desconocido: ${routingKey}`)
+            }
           } catch (error) {
             console.error('Error procesando mensaje:', error)
             console.error('Contenido del mensaje:', msg.content.toString())
@@ -65,7 +78,7 @@ export class RabbitConsumer {
         }
       )
 
-      console.log('Consumer configurado y escuchando mensajes')
+      console.log('\nConsumer configurado y escuchando mensajes de Jenkins y API')
 
     } catch (error) {
       console.error('Error consumiendo logs de RabbitMQ:', error)
