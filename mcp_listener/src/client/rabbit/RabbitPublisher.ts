@@ -102,20 +102,20 @@ export class RabbitPublisher {
   }
 
   private getAPILogLevel(msg: ResponseToRabbitAPI): string {
-    // Similar lógica para logs de API
-    // if (msg.level) {
+    // // Similar lógica para logs de API
+    // if (msg.ls) {
     //   return msg.level.toLowerCase()
     // }
 
     const message = (msg.message || '').toLowerCase()
 
     // Detectar por código de estado HTTP si existe
-    // if (msg.statusCode) {
-    //   const code = Number(msg.statusCode)
-    //   if (code >= 500) return 'error'
-    //   if (code >= 400) return 'warning'
-    //   if (code >= 200 && code < 300) return 'success'
-    // }
+    if (msg.http_status) {
+      const code = Number(msg.http_status)
+      if (code >= 500) return 'error'
+      if (code >= 400) return 'warning'
+      if (code >= 200 && code < 300) return 'success'
+    }
 
     if (message.includes('error') || message.includes('failed')) {
       return 'error'
