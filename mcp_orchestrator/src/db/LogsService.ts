@@ -1,9 +1,9 @@
-// db/LogsService.ts - ACTUALIZADO CON OUTBOX PATTERN + INCIDENT DETECTION
 import { ResponseToRabbitAPI, ResponseToRabbitJenkins } from '../types/types'
 import { Pool, PoolClient } from 'pg'
 import { Config } from '../config/Config'
 import { OutboxRepository } from './OutboxRepository'
 import { IncidentRepository } from './IncidentRepository'
+import { ActionRequestRepository } from './ActionRequestRepository'
 import { OutboxEventType, OutboxEventStatus } from '../types/outbox'
 import { IncidentDetector } from '../services/IncidentDetector'
 
@@ -12,6 +12,7 @@ export class LogsService {
   private config: Config
   private outboxRepo: OutboxRepository
   private incidentRepo: IncidentRepository
+  private actionRequestRepo: ActionRequestRepository
   private incidentDetector: IncidentDetector
 
   constructor() {
@@ -26,6 +27,7 @@ export class LogsService {
     })
     this.outboxRepo = new OutboxRepository(this.pool)
     this.incidentRepo = new IncidentRepository(this.pool)
+    this.actionRequestRepo = new ActionRequestRepository(this.pool)
     this.incidentDetector = new IncidentDetector()
   }
 
@@ -63,6 +65,9 @@ export class LogsService {
       // Inicializar tabla incidents
       await this.incidentRepo.initialize()
 
+      // Inicializar tabla action_executions
+      await this.actionRequestRepo.initialize()
+
       console.error('Base de datos inicializada correctamente')
     } catch (error) {
       console.error('Error inicializando base de datos:', error)
@@ -96,7 +101,7 @@ export class LogsService {
       let incidentIds: number[] = []
       if (detectedIncidents.length > 0) {
         incidentIds = await this.incidentRepo.insertIncidents(client, detectedIncidents)
-        console.error(`${detectedIncidents.length} incidentes detectados en Jenkins`)
+        console.error(`🚨 ${detectedIncidents.length} incidentes detectados en Jenkins`)
       }
 
       // 4. Crear evento outbox para logs batch
@@ -180,7 +185,7 @@ export class LogsService {
       let incidentIds: number[] = []
       if (detectedIncidents.length > 0) {
         incidentIds = await this.incidentRepo.insertIncidents(client, detectedIncidents)
-        console.error(`${detectedIncidents.length} incidentes detectados en API`)
+        console.error(` ${detectedIncidents.length} incidentes detectados en API`)
       }
 
       // 4. Crear evento outbox para logs batch
@@ -384,5 +389,9 @@ export class LogsService {
 
   getIncidentDetector(): IncidentDetector {
     return this.incidentDetector
+  }
+
+  getActionRequestRepository(): ActionRequestRepository {
+    return this.actionRequestRepo
   }
 }

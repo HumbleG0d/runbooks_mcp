@@ -162,6 +162,94 @@ export class MCPHandlers {
           properties: {},
           additionalProperties: false
         }
+      },
+
+      // === JENKINS ACTIONS (Delegan a Action Runner) ===
+      {
+        name: 'request_jenkins_restart',
+        description: 'Solicita reiniciar un build de Jenkins. La acción se ejecuta de forma asíncrona por el Action Runner.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            job: {
+              type: 'string',
+              description: 'Nombre del job de Jenkins'
+            },
+            build: {
+              type: 'number',
+              description: 'Número del build a reiniciar'
+            },
+            incident_id: {
+              type: 'number',
+              description: 'ID del incidente relacionado (opcional)'
+            },
+            reason: {
+              type: 'string',
+              description: 'Razón del restart'
+            }
+          },
+          required: ['job', 'build'],
+          additionalProperties: false
+        }
+      },
+      {
+        name: 'request_jenkins_rollback',
+        description: 'Solicita hacer rollback a un build anterior de Jenkins.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            job: {
+              type: 'string',
+              description: 'Nombre del job de Jenkins'
+            },
+            target_build: {
+              type: 'number',
+              description: 'Número del build al que hacer rollback'
+            },
+            incident_id: {
+              type: 'number',
+              description: 'ID del incidente relacionado (opcional)'
+            },
+            reason: {
+              type: 'string',
+              description: 'Razón del rollback'
+            }
+          },
+          required: ['job', 'target_build'],
+          additionalProperties: false
+        }
+      },
+      {
+        name: 'get_action_status',
+        description: 'Consulta el estado de una acción solicitada.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            action_id: {
+              type: 'number',
+              description: 'ID de la acción a consultar'
+            }
+          },
+          required: ['action_id'],
+          additionalProperties: false
+        }
+      },
+      {
+        name: 'get_actions_stats',
+        description: 'Obtiene estadísticas de acciones ejecutadas.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            hours: {
+              type: 'number',
+              description: 'Ventana de tiempo en horas (default: 24)',
+              minimum: 1,
+              maximum: 168,
+              default: 24
+            }
+          },
+          additionalProperties: false
+        }
       }
     ]
   }
@@ -204,7 +292,7 @@ export class MCPHandlers {
       return {
         content: [{
           type: 'text',
-          text: `**Logs de Jenkins** (${logs.length} registros)${filterText}\n\n${formattedLogs}`
+          text: `Logs de Jenkins (${logs.length} registros)${filterText}\n\n${formattedLogs}`
         }]
       }
     } catch (error) {
@@ -212,7 +300,7 @@ export class MCPHandlers {
       return {
         content: [{
           type: 'text',
-          text: `Error obteniendo logs de Jenkins: ${error instanceof Error ? error.message : 'Error desconocido'}`
+          text: ` Error obteniendo logs de Jenkins: ${error instanceof Error ? error.message : 'Error desconocido'}`
         }]
       }
     }
@@ -236,7 +324,7 @@ export class MCPHandlers {
         return {
           content: [{
             type: 'text',
-            text: `No se encontraron logs de API${status ? ` con status ${status}` : ''}`
+            text: ` No se encontraron logs de API${status ? ` con status ${status}` : ''}`
           }]
         }
       }
@@ -255,7 +343,7 @@ export class MCPHandlers {
       return {
         content: [{
           type: 'text',
-          text: `**Logs de API** (${logs.length} registros)${filterText}\n\n${formattedLogs}`
+          text: `Logs de API(${logs.length} registros)${filterText}\n\n${formattedLogs}`
         }]
       }
     } catch (error) {
@@ -291,17 +379,17 @@ export class MCPHandlers {
         const details = inc.details
 
         return `${emoji} **[${inc.severity.toUpperCase()}] ${inc.incident_type}**
-Detectado: ${timestamp}
-Estado: ${inc.status}
-Log ID: ${inc.log_id} (${inc.log_type})
-${inc.runbook_url ? `Runbook: ${inc.runbook_url}` : ''}
-${details.message ? `${details.message.substring(0, 150)}...` : ''}`
+ Detectado: ${timestamp}
+ Estado: ${inc.status}
+ Log ID: ${inc.log_id} (${inc.log_type})
+${inc.runbook_url ? ` Runbook: ${inc.runbook_url}` : ''}
+${details.message ? ` ${details.message.substring(0, 150)}...` : ''}`
       }).join('\n\n---\n\n')
 
       return {
         content: [{
           type: 'text',
-          text: `**Incidentes Activos** (${incidents.length} encontrados)\n\n${formatted}`
+          text: `Incidentes Activos (${incidents.length} encontrados)\n\n${formatted}`
         }]
       }
     } catch (error) {
@@ -339,8 +427,8 @@ ${details.message ? `${details.message.substring(0, 150)}...` : ''}`
         const emoji = this.getSeverityEmoji(inc.severity)
         const timestamp = new Date(inc.detected_at).toLocaleString('es-PE')
 
-        return `${emoji} **[${inc.severity.toUpperCase()}] ${inc.incident_type}** (ID: ${inc.id})
- ${timestamp} | ${inc.status}
+        return `${emoji} [${inc.severity.toUpperCase()}] ${inc.incident_type} (ID: ${inc.id})
+ ${timestamp} |  ${inc.status}
 ${inc.runbook_url ? `Runbook: ${inc.runbook_url}` : ''}
  ${JSON.stringify(inc.details).substring(0, 100)}...`
       }).join('\n\n')
@@ -348,7 +436,7 @@ ${inc.runbook_url ? `Runbook: ${inc.runbook_url}` : ''}
       return {
         content: [{
           type: 'text',
-          text: `**Incidentes Críticos** (${allCritical.length})\n\n${formatted}\n\nRequieren atención inmediata`
+          text: `Incidentes Críticos (${allCritical.length})\n\n${formatted}\n\n Requieren atención inmediata`
         }]
       }
     } catch (error) {
@@ -420,24 +508,24 @@ ${inc.runbook_url ? `Runbook: ${inc.runbook_url}` : ''}
       const hours = Math.min(args?.hours || 24, 168)
       const stats = await this.logService.getIncidentRepository().getStats(hours)
 
-      const text = `**Estadísticas de Incidentes** (últimas ${hours}h)
+      const text = `Estadísticas de Incidentes (últimas ${hours}h)
 
-**Total**: ${stats.total} incidentes
+Total: ${stats.total} incidentes
 
-**Por Severidad**:
+Por Severidad:
 🔴 Critical: ${stats.by_severity.critical}
 🟠 High: ${stats.by_severity.high}
 🟡 Medium: ${stats.by_severity.medium}
 🟢 Low: ${stats.by_severity.low}
 
-**Por Estado**:
+Por Estado:
 🔍 Detected: ${stats.by_status.detected}
 📢 Notified: ${stats.by_status.notified}
 ✋ Acknowledged: ${stats.by_status.acknowledged}
 🔧 Investigating: ${stats.by_status.investigating}
 ✅ Resolved: ${stats.by_status.resolved}
 
-${stats.mttr_minutes ? `⏱️ **MTTR**: ${stats.mttr_minutes.toFixed(2)} minutos` : ''}`
+${stats.mttr_minutes ? `MTTR: ${stats.mttr_minutes.toFixed(2)} minutos` : ''}`
 
       return {
         content: [{ type: 'text', text }]
@@ -460,29 +548,277 @@ ${stats.mttr_minutes ? `⏱️ **MTTR**: ${stats.mttr_minutes.toFixed(2)} minuto
         this.logService.getIncidentRepository().getStats(24)
       ])
 
-      const text = `**Estado del Servidor**
+      const text = `Estado del Servidor
 
-**Outbox**:
+Outbox:
 ⏳ Pending: ${outboxStats.pending}
 ⚙️ Processing: ${outboxStats.processing}
 ✅ Completed: ${outboxStats.completed}
 ❌ Failed: ${outboxStats.failed}
 📈 Success Rate: ${outboxStats.total > 0 ? ((outboxStats.completed / outboxStats.total) * 100).toFixed(2) : '0'}%
 
-**Incidentes (24h)**:
+Incidentes :
 🚨 Total: ${incidentStats.total}
 🔴 Critical: ${incidentStats.by_severity.critical}
 🟠 High: ${incidentStats.by_severity.high}
 ✅ Resolved: ${incidentStats.by_status.resolved}
-${incidentStats.mttr_minutes ? `⏱️ MTTR: ${incidentStats.mttr_minutes.toFixed(2)} min` : ''}
+${incidentStats.mttr_minutes ? `MTTR: ${incidentStats.mttr_minutes.toFixed(2)} min` : ''}
 
-**Sistema**: ✅ Operando normalmente`
+Sistema: Operando normalmente`
 
       return {
         content: [{ type: 'text', text }]
       }
     } catch (error) {
       console.error('[MCP] Error obteniendo estado del servidor:', error)
+      return {
+        content: [{
+          type: 'text',
+          text: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`
+        }]
+      }
+    }
+  }
+
+  // === JENKINS ACTIONS (Delegan a Action Runner) ===
+
+  public async handleRequestJenkinsRestart(args: {
+    job: string
+    build: number
+    incident_id?: number
+    reason?: string
+  }): Promise<MCPToolResponse> {
+    try {
+      const client = await this.logService['pool'].connect()
+
+      try {
+        await client.query('BEGIN')
+
+        // 1. Crear solicitud de acción
+        const actionId = await this.logService.getActionRequestRepository().createActionRequest(client, {
+          action_type: 'jenkins_restart' as any,
+          target_job: args.job,
+          target_build: args.build,
+          incident_id: args.incident_id,
+          requested_by: 'claude',
+          status: 'pending' as any,
+          params: { reason: args.reason }
+        })
+
+        // 2. Crear evento en outbox para que el Action Runner lo procese
+        await this.logService.getOutboxRepository().insertEvent(client, {
+          event_type: 'action_requested' as any,
+          aggregate_id: `action_${actionId}`,
+          payload: {
+            action_id: actionId,
+            action_type: 'jenkins_restart',
+            target_job: args.job,
+            target_build: args.build,
+            incident_id: args.incident_id,
+            reason: args.reason
+          },
+          status: 'pending' as any,
+          retry_count: 0,
+          max_retries: 3
+        })
+
+        await client.query('COMMIT')
+
+        return {
+          content: [{
+            type: 'text',
+            text: `Solicitud de restart creada (ID: ${actionId})
+ Detalles:
+- Job: ${args.job}
+- Build: #${args.build}
+${args.incident_id ? `- Incidente: #${args.incident_id}` : ''}
+${args.reason ? `- Razón: ${args.reason}` : ''}
+
+Estado: pending 
+
+Usa \`get_action_status action_id=${actionId}\` para ver el progreso`
+          }]
+        }
+      } catch (error) {
+        await client.query('ROLLBACK')
+        throw error
+      } finally {
+        client.release()
+      }
+    } catch (error) {
+      console.error('[MCP] Error creando solicitud de restart:', error)
+      return {
+        content: [{
+          type: 'text',
+          text: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`
+        }]
+      }
+    }
+  }
+
+  public async handleRequestJenkinsRollback(args: {
+    job: string
+    target_build: number
+    incident_id?: number
+    reason?: string
+  }): Promise<MCPToolResponse> {
+    try {
+      const client = await this.logService['pool'].connect()
+
+      try {
+        await client.query('BEGIN')
+
+        const actionId = await this.logService.getActionRequestRepository().createActionRequest(client, {
+          action_type: 'jenkins_rollback' as any,
+          target_job: args.job,
+          target_build: args.target_build,
+          incident_id: args.incident_id,
+          requested_by: 'claude',
+          status: 'pending' as any,
+          params: { reason: args.reason }
+        })
+
+        await this.logService.getOutboxRepository().insertEvent(client, {
+          event_type: 'action_requested' as any,
+          aggregate_id: `action_${actionId}`,
+          payload: {
+            action_id: actionId,
+            action_type: 'jenkins_rollback',
+            target_job: args.job,
+            target_build: args.target_build,
+            incident_id: args.incident_id,
+            reason: args.reason
+          },
+          status: 'pending' as any,
+          retry_count: 0,
+          max_retries: 3
+        })
+
+        await client.query('COMMIT')
+
+        return {
+          content: [{
+            type: 'text',
+            text: `Solicitud de rollback creada (ID: ${actionId})
+
+Detalles:
+- Job: ${args.job}
+- Rollback a build: #${args.target_build}
+${args.incident_id ? `- Incidente: #${args.incident_id}` : ''}
+${args.reason ? `- Razón: ${args.reason}` : ''}
+
+Estado: pending
+
+ Usa \`get_action_status action_id=${actionId}\` para ver el progreso`
+          }]
+        }
+      } catch (error) {
+        await client.query('ROLLBACK')
+        throw error
+      } finally {
+        client.release()
+      }
+    } catch (error) {
+      console.error('[MCP] Error creando solicitud de rollback:', error)
+      return {
+        content: [{
+          type: 'text',
+          text: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`
+        }]
+      }
+    }
+  }
+
+  public async handleGetActionStatus(args: { action_id: number }): Promise<MCPToolResponse> {
+    try {
+      const action = await this.logService.getActionRequestRepository().getActionById(args.action_id)
+
+      if (!action) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Acción #${args.action_id} no encontrada`
+          }]
+        }
+      }
+
+      const statusEmoji = {
+        'pending': '⏳',
+        'running': '⚙️',
+        'completed': '✅',
+        'failed': '❌',
+        'rejected': '🚫'
+      }[action.status] || '❓'
+
+      let text = `${statusEmoji} **Acción #${action.id}** - ${action.status.toUpperCase()}
+
+Detalles:
+- Tipo: ${action.action_type}
+- Job: ${action.target_job}
+- Build: #${action.target_build}
+- Solicitado por: ${action.requested_by}
+- Creado: ${new Date(action.created_at!).toLocaleString('es-PE')}`
+
+      if (action.started_at) {
+        text += `\n- Iniciado: ${new Date(action.started_at).toLocaleString('es-PE')}`
+      }
+
+      if (action.completed_at) {
+        text += `\n- Completado: ${new Date(action.completed_at).toLocaleString('es-PE')}`
+        const duration = (new Date(action.completed_at).getTime() - new Date(action.created_at!).getTime()) / 1000
+        text += `\n- Duración: ${duration}s`
+      }
+
+      if (action.result) {
+        text += `\n\nResultado:\n\`\`\`json\n${JSON.stringify(action.result, null, 2)}\n\`\`\``
+      }
+
+      if (action.error_message) {
+        text += `\n\n Error:\n${action.error_message}`
+      }
+
+      return {
+        content: [{ type: 'text', text }]
+      }
+    } catch (error) {
+      console.error('[MCP] Error obteniendo estado de acción:', error)
+      return {
+        content: [{
+          type: 'text',
+          text: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`
+        }]
+      }
+    }
+  }
+
+  public async handleGetActionsStats(args: { hours?: number }): Promise<MCPToolResponse> {
+    try {
+      const hours = Math.min(args?.hours || 24, 168)
+      const stats = await this.logService.getActionRequestRepository().getStats(hours)
+
+      const text = `Estadísticas de Acciones** (últimas ${hours}h)
+
+Total: ${stats.total} acciones
+
+Por Estado:
+⏳ Pending: ${stats.by_status.pending}
+⚙️ Running: ${stats.by_status.running}
+✅ Completed: ${stats.by_status.completed}
+❌ Failed: ${stats.by_status.failed}
+🚫 Rejected: ${stats.by_status.rejected}
+
+Por Tipo:
+🔄 Restart: ${stats.by_type.restart}
+⏪ Rollback: ${stats.by_type.rollback}
+🛑 Stop: ${stats.by_type.stop}
+
+📈 **Success Rate**: ${stats.success_rate.toFixed(2)}%`
+
+      return {
+        content: [{ type: 'text', text }]
+      }
+    } catch (error) {
+      console.error('[MCP] Error obteniendo stats de acciones:', error)
       return {
         content: [{
           type: 'text',
