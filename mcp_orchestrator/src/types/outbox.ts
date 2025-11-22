@@ -1,10 +1,10 @@
-// types/outbox.ts
-
 export enum OutboxEventType {
     JENKINS_LOG_CREATED = 'jenkins_log_created',
     API_LOG_CREATED = 'api_log_created',
     LOGS_BATCH_PROCESSED = 'logs_batch_processed',
-    INCIDENT_DETECTED = 'incident_detected'
+    INCIDENT_DETECTED = 'incident_detected',
+    ACTION_REQUESTED = 'action_requested'
+
 }
 
 export enum OutboxEventStatus {

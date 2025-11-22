@@ -49,7 +49,7 @@ export class MCPServer {
         const toolName = request.params.name
         const args = request.params.arguments || {}
 
-        console.error(`[MCP] Ejecutando tool: ${toolName}`, args)
+        console.log(`[MCP] Ejecutando tool: ${toolName}`, args)
 
         switch (toolName) {
           // === LOGS QUERIES ===
@@ -79,6 +79,19 @@ export class MCPServer {
           case 'get_server_status':
             return await this.handlers.handleServerStatus(args) as any
 
+          // === JENKINS ACTIONS ===
+          case 'request_jenkins_restart':
+            return await this.handlers.handleRequestJenkinsRestart(args as any) as any
+
+          case 'request_jenkins_rollback':
+            return await this.handlers.handleRequestJenkinsRollback(args as any) as any
+
+          case 'get_action_status':
+            return await this.handlers.handleGetActionStatus(args as any) as any
+
+          case 'get_actions_stats':
+            return await this.handlers.handleGetActionsStats(args) as any
+
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
@@ -106,13 +119,13 @@ export class MCPServer {
     }
 
     process.on('SIGINT', async () => {
-      console.error('\n[MCP] Recibida señal SIGINT, cerrando servidor...')
+      console.log('\n[MCP] Recibida señal SIGINT, cerrando servidor...')
       await this.close()
       process.exit(0)
     })
 
     process.on('SIGTERM', async () => {
-      console.error('\n[MCP] Recibida señal SIGTERM, cerrando servidor...')
+      console.log('\n[MCP] Recibida señal SIGTERM, cerrando servidor...')
       await this.close()
       process.exit(0)
     })
