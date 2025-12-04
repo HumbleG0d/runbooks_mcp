@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Ollama - LLM local
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - otel-network
+    restart: unless-stopped
+
+  # HTTP Bridge - Convierte MCP a REST API
+  http-bridge:
+    build:
+      context: ../mcp_orchestrator
+      dockerfile: Dockerfile
+    container_name: mcp-http-bridge
+    ports:
+      - "3001:3001"
+    environment:
+      - POSTGRES_HOST=mcp_orchestrator-postgres-1
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=mcp_logs
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - HTTP_BRIDGE_PORT=3001
+    networks:
+      - otel-network
+      - mcp_orchestrator_default
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    command: node dist/http-bridge.js
+
+  # Slack Bot
+  slack-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: slack-chatops-bot
+    env_file:
+      - .env
+    networks:
+      - otel-network
+    depends_on:
+      - ollama
+      - http-bridge
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+
+networks:
+  otel-network:
+    external: true
+  mcp_orchestrator_default:
+    external: true

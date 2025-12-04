@@ -1,0 +1,23 @@
+{
+    "name": "slack-chatops-bot",
+    "version": "1.0.0",
+    "description": "Slack ChatOps bot usando Ollama y MCP",
+    "main": "dist/slack-bot.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/slack-bot.js",
+        "dev": "ts-node src/slack-bot.ts"
+    },
+    "dependencies": {
+        "@slack/bolt": "^3.17.1",
+        "axios": "^1.6.5",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@types/node": "^20.10.6",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3"
+    }
+}

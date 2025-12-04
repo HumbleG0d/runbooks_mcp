@@ -8,8 +8,6 @@ export class Config {
   private _databaseConfig: DatabaseConfig
   private _outboxConfig: OutboxConfig
 
-
-
   private constructor() {
     this._serverConfig = this.loadServerConfig()
     this._databaseConfig = this.loadDatabaseConfig()
@@ -32,22 +30,13 @@ export class Config {
     }
   }
 
-
-
   private loadDatabaseConfig(): DatabaseConfig {
-    let dbHost = 'localhost'
-    if (process.env.DB_HOST) {
-      dbHost = process.env.DB_HOST
-    } else if (process.env.NODE_ENV === 'docker') {
-      dbHost = 'postgres'
-    }
-
     return {
-      host: dbHost,
-      port: parseInt(process.env.DB_PORT || '5432'),
-      database: process.env.DB_NAME || 'mcp_logs',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
+      host: process.env.POSTGRES_HOST || process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.POSTGRES_PORT || process.env.DB_PORT || '5432'),
+      database: process.env.POSTGRES_DB || process.env.DB_NAME || 'mcp_logs',
+      user: process.env.POSTGRES_USER || process.env.DB_USER || 'postgres',
+      password: process.env.POSTGRES_PASSWORD || process.env.DB_PASSWORD || 'postgres',
       maxConnections: parseInt(process.env.DB_MAX_CONNECTIONS || '20')
     }
   }
