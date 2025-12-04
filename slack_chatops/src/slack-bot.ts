@@ -10,7 +10,7 @@ dotenv.config();
 // Configuración
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const MCP_BRIDGE_URL = process.env.MCP_BRIDGE_URL || 'http://localhost:3001';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'tinyllama';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2:3b';
 
 // Validar variables de entorno requeridas
 if (!process.env.SLACK_BOT_TOKEN) {
@@ -40,19 +40,26 @@ Tienes acceso a las siguientes herramientas:
 2. get_critical_incidents - Obtiene incidentes críticos
 3. acknowledge_incident - Marca un incidente como reconocido
 4. resolve_incident - Marca un incidente como resuelto
-5. request_jenkins_restart - Reinicia un build de Jenkins
-6. request_jenkins_rollback - Hace rollback a un build anterior
-7. get_action_status - Consulta el estado de una acción
+5. request_jenkins_restart - Reinicia un build de Jenkins (parámetros: job, build, reason)
+6. request_jenkins_rollback - Hace rollback a un build anterior (parámetros: job, target_build, reason)
+7. get_action_status - Consulta el estado de una acción (parámetros: action_id)
 8. get_server_status - Obtiene el estado del servidor
 
-Cuando el usuario te pida algo, analiza qué herramienta necesitas usar y responde en formato JSON:
+IMPORTANTE: Cuando el usuario mencione números de build o nombres de jobs, SIEMPRE extrae esos valores exactos.
+
+Ejemplos:
+- "reinicia el job tesis-runbooks build 11" → {"tool": "request_jenkins_restart", "parameters": {"job": "tesis-runbooks", "build": 11, "reason": "reinicio solicitado"}}
+- "rollback del job api-service al build 25" → {"tool": "request_jenkins_rollback", "parameters": {"job": "api-service", "target_build": 25, "reason": "rollback solicitado"}}
+- "estado del servidor" → {"tool": "get_server_status", "parameters": {}}
+
+Cuando el usuario te pida algo, analiza qué herramienta necesitas usar y responde SOLO con JSON válido:
 {
   "tool": "nombre_de_la_herramienta",
-  "parameters": { ... },
-  "explanation": "explicación breve de lo que vas a hacer"
+  "parameters": { "job": "nombre-exacto", "build": numero },
+  "explanation": "explicación breve"
 }
 
-Si no necesitas usar ninguna herramienta, responde normalmente.
+Si no necesitas usar ninguna herramienta, responde normalmente sin JSON.
 
 Sé conciso y profesional. Usa emojis cuando sea apropiado.`;
 

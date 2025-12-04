@@ -2,17 +2,27 @@ version: '3.8'
 
 services:
   # Ollama - LLM local
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - otel-network
-    restart: unless-stopped
-
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   networks:
+  #     - otel-network
+  #   restart: unless-stopped
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [ gpu ]
+  #   environment:
+  #     - NVIDIA_VISIBLE_DEVICES=all
+  #   mem_limit: 1g
+  #   memswap_limit: 2g  
   # HTTP Bridge - Convierte MCP a REST API
   http-bridge:
     build:
@@ -31,8 +41,6 @@ services:
     networks:
       - otel-network
       - mcp_orchestrator_default
-    depends_on:
-      - ollama
     restart: unless-stopped
     command: node dist/http-bridge.js
 
@@ -47,12 +55,8 @@ services:
     networks:
       - otel-network
     depends_on:
-      - ollama
       - http-bridge
     restart: unless-stopped
-
-volumes:
-  ollama_data:
 
 networks:
   otel-network:
