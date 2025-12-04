@@ -48,10 +48,11 @@ export class ActionConsumer {
 
             // Bind queue a routing keys de acciones
             await this.channel.bindQueue(queueName, exchange, 'actions.jenkins.*')
-            await this.channel.bindQueue(queueName, exchange, 'action.requested')
+            // CORRECCIÓN: la Outbox publica a 'actions.requested' (plural)
+            await this.channel.bindQueue(queueName, exchange, 'actions.requested')
 
             console.error(`[ActionConsumer] Queue configurada: ${queueName}`)
-            console.error(`[ActionConsumer] Listening on: actions.jenkins.*, action.requested`)
+            console.error(`[ActionConsumer] Listening on: actions.jenkins.*, actions.requested`)
 
             // Configurar prefetch (procesar 1 mensaje a la vez)
             await this.channel.prefetch(1)
@@ -107,21 +108,36 @@ export class ActionConsumer {
         console.error(`[ActionConsumer] Mensaje recibido (${routingKey})`)
 
         try {
-            const event: ActionEvent = JSON.parse(content)
+            const message = JSON.parse(content)
 
-            console.error(`[ActionConsumer] Procesando acción #${event.action_id}`)
+            // El mensaje puede venir en dos formatos:
+            // 1. Desde Outbox: { eventId, eventType, payload: { action_id, ... } }
+            // 2. Directo: { action_id, action_type, ... }
+            let actionId: number
+
+            if (message.payload && message.payload.action_id) {
+                // Formato desde Outbox
+                actionId = message.payload.action_id
+                console.error(`[ActionConsumer] Evento Outbox #${message.eventId} -> Acción #${actionId}`)
+            } else if (message.action_id) {
+                // Formato directo
+                actionId = message.action_id
+                console.error(`[ActionConsumer] Procesando acción #${actionId}`)
+            } else {
+                throw new Error(`Mensaje inválido: no se encontró action_id. Mensaje: ${content}`)
+            }
 
             // Obtener la acción de la BD
-            const action = await this.actionRepo.getActionById(event.action_id)
+            const action = await this.actionRepo.getActionById(actionId)
 
             if (!action) {
-                throw new Error(`Acción #${event.action_id} no encontrada en BD`)
+                throw new Error(`Acción #${actionId} no encontrada en BD`)
             }
 
             // Ejecutar la acción
             await this.actionExecutor.execute(action)
 
-            console.error(`[ActionConsumer] Acción #${event.action_id} procesada\n`)
+            console.error(`[ActionConsumer] Acción #${actionId} procesada\n`)
 
         } catch (error) {
             console.error('[ActionConsumer] Error procesando mensaje:', error)
