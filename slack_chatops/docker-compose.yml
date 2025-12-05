@@ -1,28 +1,4 @@
-version: '3.8'
-
 services:
-  # Ollama - LLM local
-  # ollama:
-  #   image: ollama/ollama:latest
-  #   container_name: ollama
-  #   ports:
-  #     - "11434:11434"
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-  #   networks:
-  #     - otel-network
-  #   restart: unless-stopped
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: all
-  #             capabilities: [ gpu ]
-  #   environment:
-  #     - NVIDIA_VISIBLE_DEVICES=all
-  #   mem_limit: 1g
-  #   memswap_limit: 2g  
   # HTTP Bridge - Convierte MCP a REST API
   http-bridge:
     build:
@@ -54,9 +30,27 @@ services:
       - .env
     networks:
       - otel-network
+      - mcp_orchestrator_default
     depends_on:
       - http-bridge
     restart: unless-stopped
+
+  # Incident Notifier - Notificaciones proactivas en Slack
+  incident-notifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: incident-notifier
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
+      - SLACK_INCIDENTS_CHANNEL=${SLACK_INCIDENTS_CHANNEL:-incidents}
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    networks:
+      - otel-network
+    depends_on:
+      - http-bridge
+    restart: unless-stopped
+    command: node dist/incident-notifier.js
 
 networks:
   otel-network:

@@ -122,34 +122,38 @@ export class LogsService {
       })
 
       // 5. Si hay incidentes CRÍTICOS, crear eventos outbox individuales para notificación inmediata
-      const criticalIncidents = this.incidentDetector.filterCriticalIncidents(detectedIncidents)
+      for (let i = 0; i < detectedIncidents.length; i++) {
+        const incident = detectedIncidents[i]
+        const incidentId = incidentIds[i]
 
-      for (let i = 0; i < criticalIncidents.length; i++) {
-        const incident = criticalIncidents[i]
+        // Extraer información del log para el mensaje
+        const logDetails = incident.details as any
+        const jobName = logDetails.job_name || logDetails.job || 'unknown'
+        const buildNumber = logDetails.build_number || logDetails.build || 0
+        const errorMessage = logDetails.error_message || logDetails.message || 'Error desconocido'
+
         await this.outboxRepo.insertEvent(client, {
-          event_type: OutboxEventType.INCIDENT_DETECTED,
-          aggregate_id: `incident_${incidentIds[i]}`,
+          event_type: 'incident_detected' as any, // Fixed: use underscore for proper routing
+          aggregate_id: `incident_${incidentId}`,
           payload: {
-            incident_id: incidentIds[i],
-            incident_type: incident.incident_type,
+            incident_id: incidentId,
             severity: incident.severity,
-            log_id: incident.log_id,
-            details: incident.details,
-            runbook_url: incident.runbook_url,
+            job_name: jobName,
+            build_number: buildNumber,
+            error_message: errorMessage,
             detected_at: incident.detected_at
           },
           status: OutboxEventStatus.PENDING,
           retry_count: 0,
-          max_retries: 5 // Más reintentos para incidentes críticos
+          max_retries: incident.severity === 'critical' ? 5 : 3
         })
       }
 
       await client.query('COMMIT')
 
-      if (criticalIncidents.length > 0) {
-        console.error(`${criticalIncidents.length} incidentes CRÍTICOS detectados → Notificación inmediata programada`)
+      if (detectedIncidents.length > 0) {
+        console.error(`🚨 ${detectedIncidents.length} incidentes detectados → Notificaciones programadas`)
       }
-
       console.error(`${logs.length} logs de Jenkins insertados + evento outbox creado`)
       return logs.length
     } catch (error) {

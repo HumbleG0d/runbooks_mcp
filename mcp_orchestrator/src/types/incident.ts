@@ -97,5 +97,40 @@ export const INCIDENT_RULES: IncidentRule[] = [
             log.http_status === 401 || log.http_status === 403,
         description: 'Fallo de autenticación/autorización',
         runbook: ''
+    },
+
+    // NUEVAS REGLAS: Detectan fallos sin importar el level (para logs con level='N/A')
+    {
+        name: 'jenkins_pipeline_failure',
+        type: 'jenkins',
+        severity: IncidentSeverity.HIGH,
+        condition: (log) =>
+            /pipeline.*(fail|error|abort)/i.test(log.message) ||
+            /build.*(fail|error)/i.test(log.message) ||
+            /stage.*(fail|error)/i.test(log.message),
+        description: 'Pipeline de Jenkins falló (detectado por mensaje)',
+        runbook: ''
+    },
+    {
+        name: 'jenkins_test_failure',
+        type: 'jenkins',
+        severity: IncidentSeverity.HIGH,
+        condition: (log) =>
+            /test.*(fail|error)/i.test(log.message) ||
+            /\d+\/\d+.*test.*pass/i.test(log.message) || // "3/10 tests passed"
+            /assertion.*fail/i.test(log.message) ||
+            /ERROR:.*test.*fail/i.test(log.message), // "ERROR: Tests failed"
+        description: 'Tests fallaron en Jenkins',
+        runbook: ''
+    },
+    {
+        name: 'jenkins_exception',
+        type: 'jenkins',
+        severity: IncidentSeverity.CRITICAL,
+        condition: (log) =>
+            (/exception/i.test(log.message) || /error:/i.test(log.message)) &&
+            log.message.length > 30, // Evitar falsos positivos
+        description: 'Exception detectada en Jenkins',
+        runbook: ''
     }
 ]

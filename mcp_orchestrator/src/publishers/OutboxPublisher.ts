@@ -87,7 +87,7 @@ export class RabbitMQPublisher implements EventPublisher {
             [OutboxEventType.JENKINS_LOG_CREATED]: 'logs.jenkins.created',
             [OutboxEventType.API_LOG_CREATED]: 'logs.api.created',
             [OutboxEventType.LOGS_BATCH_PROCESSED]: 'logs.batch.processed',
-            [OutboxEventType.INCIDENT_DETECTED]: 'incidents.detected.critical', // NUEVO
+            [OutboxEventType.INCIDENT_DETECTED]: 'incident.detected', // NUEVO
             [OutboxEventType.ACTION_REQUESTED]: 'actions.requested'
         }
         return routes[eventType] || 'logs.unknown'

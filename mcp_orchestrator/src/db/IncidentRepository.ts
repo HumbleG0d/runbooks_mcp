@@ -254,4 +254,45 @@ export class IncidentRepository {
             params
         )
     }
+
+    /**
+     * Calcula el MTTR (Mean Time To Resolution) de un incidente
+     */
+    async calculateMTTR(incidentId: number): Promise<number | null> {
+        const result = await this.pool.query(
+            `SELECT 
+                EXTRACT(EPOCH FROM (resolved_at - detected_at)) / 60 as mttr_minutes
+             FROM incidents
+             WHERE id = $1 AND resolved_at IS NOT NULL`,
+            [incidentId]
+        )
+
+        if (result.rows.length === 0) {
+            return null
+        }
+
+        return parseFloat(result.rows[0].mttr_minutes)
+    }
+
+    /**
+     * Obtiene detalles completos de un incidente para notificaciones
+     */
+    async getIncidentDetails(incidentId: number): Promise<any | null> {
+        const result = await this.pool.query(
+            `SELECT 
+                id, incident_type, severity, status, log_id, log_type,
+                details, runbook_url, detected_at, notified_at,
+                acknowledged_at, resolved_at, acknowledged_by, resolved_by,
+                resolution_notes
+             FROM incidents
+             WHERE id = $1`,
+            [incidentId]
+        )
+
+        if (result.rows.length === 0) {
+            return null
+        }
+
+        return result.rows[0]
+    }
 }
