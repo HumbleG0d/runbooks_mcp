@@ -501,6 +501,122 @@ ${inc.runbook_url ? `Runbook: ${inc.runbook_url}` : ''}
     }
   }
 
+  /**
+   * NEW: Resolve incident by job and build (called by ActionExecutor)
+   * Finds incident, marks as resolved, calculates MTTR, publishes event
+   */
+  public async handleResolveIncidentByJob(args: {
+    job_name: string
+    build_number: number
+    resolution_method: string
+    resolved_by: string
+  }): Promise<MCPToolResponse> {
+    try {
+      // Use LogsService's internal pool connection
+      const incidentRepo = this.logService.getIncidentRepository()
+      const outboxRepo = this.logService.getOutboxRepository()
+
+      // Get pool from Config (same way LogsService does it)
+      const { Pool } = require('pg')
+      const Config = require('../config/Config').Config
+      const config = Config.getInstance()
+      const pool = new Pool({
+        host: config.postgres.host,
+        port: config.postgres.port,
+        database: config.postgres.database,
+        user: config.postgres.user,
+        password: config.postgres.password,
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+      })
+
+      const client = await pool.connect()
+
+      try {
+        await client.query('BEGIN')
+
+        // 1. Find incident
+        const incident = await incidentRepo.findByJobAndBuild(
+          client,
+          args.job_name,
+          args.build_number
+        )
+
+        if (!incident) {
+          await client.query('ROLLBACK')
+          client.release()
+          await pool.end()
+          return {
+            content: [{
+              type: 'text',
+              text: `No se encontró incidente activo para ${args.job_name} build #${args.build_number}`
+            }]
+          }
+        }
+
+        // 2. Mark as resolved
+        await incidentRepo.markAsResolved(
+          client,
+          incident.id!,
+          args.resolution_method,
+          args.resolved_by
+        )
+
+        // 3. Calculate MTTR
+        const mttr = await incidentRepo.calculateMTTR(incident.id!)
+
+        // 4. Publish incident_resolved event
+        await outboxRepo.insertEvent(client, {
+          event_type: 'incident_resolved' as any,
+          aggregate_id: `incident_${incident.id}`,
+          payload: {
+            incident_id: incident.id,
+            severity: incident.severity,
+            job_name: args.job_name,
+            build_number: args.build_number,
+            resolution_method: args.resolution_method,
+            resolved_by: args.resolved_by,
+            mttr_minutes: mttr,
+            detected_at: incident.detected_at,
+            resolved_at: new Date()
+          },
+          status: 'pending' as any,
+          retry_count: 0,
+          max_retries: 3
+        })
+
+        await client.query('COMMIT')
+        client.release()
+        await pool.end()
+
+        console.log(`✅ Incident #${incident.id} resolved via ${args.resolution_method}, MTTR: ${mttr?.toFixed(2)} min`)
+
+        return {
+          content: [{
+            type: 'text',
+            text: `Incidente #${incident.id} resuelto exitosamente\nMétodo: ${args.resolution_method}\nMTTR: ${mttr?.toFixed(2)} minutos\nResuelto por: ${args.resolved_by}`
+          }]
+        }
+
+      } catch (error) {
+        await client.query('ROLLBACK')
+        client.release()
+        await pool.end()
+        throw error
+      }
+
+    } catch (error) {
+      console.error('[MCP] Error resolviendo incidente por job:', error)
+      return {
+        content: [{
+          type: 'text',
+          text: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`
+        }]
+      }
+    }
+  }
+
   // === STATISTICS & MONITORING ===
 
   public async handleIncidentsStats(args: { hours?: number }): Promise<MCPToolResponse> {

@@ -61,6 +61,22 @@ app.post('/api/incidents/:id/resolve', async (req, res) => {
     }
 })
 
+// NEW: Resolve incident by job and build (called by ActionExecutor after successful action)
+app.post('/api/incidents/resolve-by-job', async (req, res) => {
+    try {
+        const { job_name, build_number, resolution_method, resolved_by } = req.body
+        const result = await mcpHandlers.handleResolveIncidentByJob({
+            job_name,
+            build_number,
+            resolution_method,
+            resolved_by
+        })
+        res.json({ success: true, data: result })
+    } catch (error) {
+        res.status(500).json({ success: false, error: (error as Error).message })
+    }
+})
+
 app.get('/api/incidents/stats', async (req, res) => {
     try {
         const hours = parseInt(req.query.hours as string) || 24

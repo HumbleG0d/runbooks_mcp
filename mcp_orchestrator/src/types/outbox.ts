@@ -3,6 +3,7 @@ export enum OutboxEventType {
     API_LOG_CREATED = 'api_log_created',
     LOGS_BATCH_PROCESSED = 'logs_batch_processed',
     INCIDENT_DETECTED = 'incident_detected',
+    INCIDENT_RESOLVED = 'incident_resolved', // NEW: Para notificaciones de resolución
     ACTION_REQUESTED = 'action_requested'
 
 }

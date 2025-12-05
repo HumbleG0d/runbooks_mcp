@@ -118,6 +118,10 @@ export class ActionExecutor {
 
                 console.log(`Acción #${action.id} COMPLETADA`)
                 console.log(`   ${result.message}`)
+
+                // NEW: Resolve related incident (triggers MTTR calculation and Slack notification)
+                await this.resolveRelatedIncident(action, result)
+
             } else {
                 await this.actionRepo.markAsFailed(action.id, result.message)
                 console.log(`Acción #${action.id} FALLIDA`)
@@ -133,6 +137,39 @@ export class ActionExecutor {
         }
 
         console.log(`\n${'='.repeat(60)}\n`)
+    }
+
+    /**
+     * NEW: Resolve related incident after successful action
+     * Calls http-bridge API to mark incident as resolved and trigger notification
+     */
+    private async resolveRelatedIncident(action: ActionExecution, result: JenkinsActionResult): Promise<void> {
+        try {
+            const httpBridgeUrl = process.env.HTTP_BRIDGE_URL || 'http://http-bridge:3001'
+
+            const response = await fetch(`${httpBridgeUrl}/api/incidents/resolve-by-job`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    job_name: result.jobName,
+                    build_number: result.buildNumber,
+                    resolution_method: action.action_type,
+                    resolved_by: action.requested_by || 'system'
+                })
+            })
+
+            if (response.ok) {
+                const data = await response.json() as any
+                console.log(`✅ Incidente resuelto: ${data.data?.content?.[0]?.text || 'OK'}`)
+            } else {
+                console.log(`⚠️  No se pudo resolver incidente (puede que no exista): ${response.status}`)
+            }
+        } catch (error) {
+            console.error('Error resolviendo incidente relacionado:', error)
+            // No lanzamos el error para no afectar el flujo principal
+        }
     }
 
     /**

@@ -288,11 +288,56 @@ export class IncidentRepository {
              WHERE id = $1`,
             [incidentId]
         )
-
         if (result.rows.length === 0) {
             return null
         }
 
-        return result.rows[0]
+        return result.rows[0] || null
+    }
+
+    /**
+     * Busca un incidente activo por job_name y build_number
+     * Usado para resolver incidentes cuando se ejecuta restart/rollback
+     */
+    async findByJobAndBuild(
+        client: PoolClient,
+        jobName: string,
+        buildNumber: number
+    ): Promise<DetectedIncident | null> {
+        const result = await client.query(
+            `SELECT * FROM incidents 
+             WHERE details->>'job_name' = $1 
+             AND (details->>'build_number')::int = $2
+             AND status != 'resolved'
+             ORDER BY detected_at DESC
+             LIMIT 1`,
+            [jobName, buildNumber]
+        )
+
+        return result.rows[0] || null
+    }
+
+    /**
+     * Marca un incidente como resuelto
+     * Actualiza status, resolved_at, y agrega detalles de resolución
+     */
+    async markAsResolved(
+        client: PoolClient,
+        incidentId: number,
+        resolutionMethod: string,
+        resolvedBy: string
+    ): Promise<void> {
+        await client.query(
+            `UPDATE incidents 
+             SET status = 'resolved',
+                 resolved_at = NOW(),
+                 resolved_by = $2,
+                 details = details || jsonb_build_object(
+                   'resolution_method', $3,
+                   'resolved_by', $2
+                 )
+             WHERE id = $1`,
+            [incidentId, resolvedBy, resolutionMethod]
+        )
     }
 }
